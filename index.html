@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Config</title>
-    <!-- Link to our new, separate CSS file -->
-    <link rel="stylesheet" href="/static/style.css">
+    <!-- Link to our new, separate CSS file --><link rel="stylesheet" href="/static/style.css">
+    <!-- Inter font from Google Fonts --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="page-body">
 
     <div class="page-container">
-        <!-- Header -->
-        <header class="header">
+        <!-- Header --><header class="header">
             <div class="header-logo-container">
                 <svg class="header-logo" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122l-1.178.943a1.125 1.125 0 01-1.766-.01l-1.122-1.122a1.125 1.125 0 010-1.59l4.564-4.564a1.125 1.125 0 011.59 0l4.564 4.564a1.125 1.125 0 010 1.59l-1.122 1.122a1.125 1.125 0 01-1.766.01l-1.178-.943A3 3 0 019 18.257v-1.007zM15 9.75a3 3 0 013-3h.008a3 3 0 013 3v.008a3 3 0 01-3 3h-.008a3 3 0 01-3-3V9.75z" />
@@ -22,16 +23,12 @@
             <p class="header-subtitle">Manage your kiosk display settings and schedules</p>
         </header>
 
-        <!-- Status Message Box -->
-        <div id="status-message" class="status-message" role="alert">
-            <!-- Messages appear here -->
-        </div>
+        <!-- Status Message Box --><div id="status-message" class="status-message" role="alert">
+            <!-- Messages appear here --></div>
 
-        <!-- Main Config Card -->
-        <main class="config-card">
+        <!-- Main Config Card --><main class="config-card">
 
-            <!-- Display Schedule Section -->
-            <section class="card-section">
+            <!-- Display Schedule Section --><section class="card-section">
                 <div class="section-header">
                     <svg class="section-header-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -62,8 +59,7 @@
                 </div>
             </section>
 
-            <!-- Content Rotation Section -->
-            <section class="card-section">
+            <!-- Content Rotation Section --><section class="card-section">
                 <div class="section-header">
                     <svg class="section-header-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
@@ -77,22 +73,19 @@
                     </button>
                 </div>
 
-                <div id="url-list-container" class="section-content">
-                    <!-- URL entries will be dynamically inserted here -->
-                </div>
+                <div id="url-list-container" class="section-content url-list-container">
+                    <!-- URL entries will be dynamically inserted here by JavaScript --></div>
             </section>
 
-            <!-- Off-Hours Display URL Section -->
-            <section class="card-section">
+            <!-- Off-Hours Display URL Section --><section class="card-section">
                 <div class="form-group">
-                    <label for="off-hours-url" class="form-label">Off-Hours Display URL</label>
+                    <label for="off-hours-url" class="form-label">Off Hours Display URL</label>
                     <p class="form-label-description">This page will be displayed outside operating hours</p>
-                    <input type="text" id="off-hours-url" class="form-input" placeholder="https://example.com" />
+                    <input type="text" id="off-hours-url" class="form-input" placeholder="https://offhours.site" />
                 </div>
             </section>
 
-            <!-- Action Buttons Footer -->
-            <footer class="card-footer">
+            <!-- Action Buttons Footer --><footer class="card-footer">
                 <div class="footer-button-group">
                     <button id="restart-btn" class="button button-secondary">
                         <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -100,8 +93,7 @@
                         </svg>
                         Restart Kiosk
                     </button>
-                    <!-- "Update from GitHub" button has been removed -->
-                </div>
+                    <!-- The "Update from GitHub" button was removed --></div>
                 
                 <button id="save-btn" class="button button-primary">
                     <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -112,10 +104,14 @@
             </footer>
 
         </main>
+
+        <footer class="version-footer">
+            <p>Version: <span id="app-version">Loading...</span></p>
+            <p><a href="https://github.com/kaperose/pi-kiosk" target="_blank">View project on GitHub</a></p>
+        </footer>
     </div>
 
-    <!-- URL Entry Template (for JavaScript) -->
-    <template id="url-entry-template">
+    <!-- URL Entry Template (for JavaScript) --><template id="url-entry-template">
         <div class="url-entry">
             <div class="form-group url-entry-group url-entry-group-url">
                 <label class="form-label">URL</label>
@@ -123,7 +119,7 @@
             </div>
             <div class="form-group url-entry-group url-entry-group-duration">
                 <label class="form-label">Duration (s)</label>
-                <input type="number" class="form-input duration-input" value="60">
+                <input type="number" class="form-input duration-input" value="60" min="5" max="3600">
             </div>
             <button class="button-remove" title="Remove URL">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -150,9 +146,16 @@
         
         const statusMessage = document.getElementById('status-message');
         const scheduleStatusBadge = document.getElementById('schedule-status-badge');
-        
-        // Store original button text/icons
-        const saveBtnOriginal = saveBtn.innerHTML;
+        const appVersionSpan = document.getElementById('app-version'); // For displaying version
+
+        // Define a simple version
+        const APP_VERSION = "1.0.0";
+        appVersionSpan.textContent = APP_VERSION;
+
+        // Store original button content for loading states
+        const saveBtnOriginalContent = saveBtn.innerHTML;
+        const restartBtnOriginalContent = restartBtn.innerHTML;
+
 
         // --- Utility Functions ---
         
@@ -200,10 +203,10 @@
                 // Populate URL list
                 urlListContainer.innerHTML = ''; // Clear existing
                 if (config.on_urls && config.on_urls.length > 0) {
-                    config.on_urls.forEach(entry => addUrlEntry(entry.url, entry.duration));
+                    config.on_urls.forEach((entry, index) => addUrlEntry(entry.url, entry.duration, index + 1));
                 } else {
                     // Add one blank entry if none exist
-                    addUrlEntry('', 60);
+                    addUrlEntry('', 60, 1);
                 }
                 
                 updateScheduleStatus();
@@ -260,7 +263,7 @@
                 console.error('Error saving config:', error);
                 showStatus(`Error saving config: ${error.message}`, 'error');
             } finally {
-                resetButton(saveBtn, saveBtnOriginal);
+                resetButton(saveBtn, saveBtnOriginalContent);
                 // Hide success/error message after 3 seconds
                 setTimeout(hideStatus, 3000);
             }
@@ -274,7 +277,6 @@
                 return;
             }
             
-            const restartBtnOriginal = restartBtn.innerHTML;
             setButtonLoading(restartBtn);
             showStatus('Sending restart command...', 'loading');
 
@@ -292,7 +294,7 @@
                 console.error('Error restarting kiosk:', error);
                 showStatus(`Error restarting kiosk: ${error.message}`, 'error');
             } finally {
-                resetButton(restartBtn, restartBtnOriginal);
+                resetButton(restartBtn, restartBtnOriginalContent);
                 setTimeout(hideStatus, 3000);
             }
         }
@@ -300,24 +302,48 @@
         /**
          * Creates and adds a new URL entry row to the UI
          */
-        function addUrlEntry(url = '', duration = 60) {
+        function addUrlEntry(url = '', duration = 60, number) {
             const templateClone = urlEntryTemplate.content.cloneNode(true);
             const urlEntry = templateClone.querySelector('.url-entry');
             
             urlEntry.querySelector('.url-input').value = url;
             urlEntry.querySelector('.duration-input').value = duration;
             
-            urlEntry.querySelector('.button-remove').addEventListener('click', () => {
-                // Prevent removing the last item
+            // Update the URL label to show "URL 1", "URL 2", etc.
+            const urlLabel = urlEntry.querySelector('.form-group.url-entry-group-url .form-label');
+            if (urlLabel) {
+                urlLabel.textContent = `URL ${number}`;
+            }
+
+            const removeButton = urlEntry.querySelector('.button-remove');
+            removeButton.addEventListener('click', () => {
+                // Prevent removing the last item if only one remains
                 if (urlListContainer.querySelectorAll('.url-entry').length > 1) {
                     urlEntry.remove();
+                    // Re-number URLs after removal
+                    updateUrlEntryNumbers();
                 } else {
-                    alert('You must have at least one URL entry.');
+                    showStatus('You must have at least one URL entry.', 'error');
+                    setTimeout(hideStatus, 3000);
                 }
             });
             
             urlListContainer.appendChild(urlEntry);
         }
+
+        /**
+         * Re-numbers the URL entries after an addition or removal
+         */
+        function updateUrlEntryNumbers() {
+            const urlEntries = urlListContainer.querySelectorAll('.url-entry');
+            urlEntries.forEach((entry, index) => {
+                const urlLabel = entry.querySelector('.form-group.url-entry-group-url .form-label');
+                if (urlLabel) {
+                    urlLabel.textContent = `URL ${index + 1}`;
+                }
+            });
+        }
+
 
         /**
          * Checks if the kiosk is currently "ON" or "OFF" and updates the badge
@@ -362,7 +388,7 @@
         document.addEventListener('DOMContentLoaded', loadConfig);
         saveBtn.addEventListener('click', saveConfig);
         restartBtn.addEventListener('click', restartKiosk);
-        addUrlBtn.addEventListener('click', () => addUrlEntry('', 60));
+        addUrlBtn.addEventListener('click', () => addUrlEntry('', 60, urlListContainer.querySelectorAll('.url-entry').length + 1));
 
         // Update the status badge every 10 seconds and also when times change
         setInterval(updateScheduleStatus, 10000);
