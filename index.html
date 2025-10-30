@@ -4,92 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Config</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Removed inline <style> block and linked to external stylesheet -->
+    <!-- Removed Tailwind CDN and linked to our clean, local stylesheet -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+<body class="page-body">
 
-    <div class="max-w-3xl mx-auto">
+    <div class="page-container">
         <!-- Header -->
-        <header class="flex flex-col items-center justify-center mb-6">
-            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        <header class="header">
+            <div class="header-logo-container">
+                <svg class="header-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             </div>
-            <h1 class="text-3xl font-bold text-gray-800 mt-4">Kiosk Config</h1>
-            <p class="text-gray-500 text-lg">Manage your kiosk display settings and schedules</p>
+            <h1 class="header-title">Kiosk Config</h1>
+            <p class="header-subtitle">Manage your kiosk display settings and schedules</p>
         </header>
 
         <!-- Main Config Card -->
-        <main class="bg-white rounded-lg shadow-xl p-6 md:p-8 space-y-8">
+        <main class="config-card">
             
             <!-- Status Message -->
-            <div id="status-message" class="p-4 rounded-md text-center font-medium hidden" role="alert"></div>
+            <div id="status-message" class="status-message" role="alert"></div>
             
             <!-- Display Schedule -->
-            <section>
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 flex items-center">
-                        <svg class="w-6 h-6 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <section class="card-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <svg class="section-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         Display Schedule
                     </h2>
-                    <span class="text-sm font-medium text-green-600 bg-green-100 px-3 py-1 rounded-full">Active</span>
+                    <span class="status-badge">Active</span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="on_hours_start" class="block text-sm font-medium text-gray-500 mb-1">Start Time (24h)</label>
-                        <input type="time" id="on_hours_start" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="on_hours_start" class="form-label">Start Time (24h)</label>
+                        <input type="time" id="on_hours_start" class="form-input">
                     </div>
-                    <div>
-                        <label for="on_hours_end" class="block text-sm font-medium text-gray-500 mb-1">End Time (24h)</label>
-                        <input type="time" id="on_hours_end" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    <div class="form-group">
+                        <label for="on_hours_end" class="form-label">End Time (24h)</label>
+                        <input type="time" id="on_hours_end" class="form-input">
                     </div>
                 </div>
             </section>
 
             <!-- Content Rotation -->
-            <section>
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 flex items-center">
-                         <svg class="w-6 h-6 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"></path></svg>
+            <section class="card-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                         <svg class="section-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"></path></svg>
                         Content Rotation
                     </h2>
-                    <button type="button" id="add-url-btn" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md font-medium text-sm transition-colors flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <button type="button" id="add-url-btn" class="button-add">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                         Add URL
                     </button>
                 </div>
-                <div id="on-urls-list" class="space-y-3">
+                <div id="on-urls-list" class="url-list">
                     <!-- Dynamic URL entries will be injected here -->
                 </div>
             </section>
 
             <!-- Off Hours URL -->
-            <section>
-                <h2 class="text-xl font-semibold text-gray-700 mb-4">Off-Hours Display URL</h2>
-                <div>
-                    <label for="off_hours_url" class="block text-sm font-medium text-gray-500 mb-1">Page to be displayed outside operating hours</label>
-                    <input type="text" id="off_hours_url" placeholder="https://offhours.site" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <section class="card-section">
+                <div class="section-header">
+                    <h2 class="section-title">Off-Hours Display URL</h2>
+                </div>
+                <div class="form-group">
+                    <label for="off_hours_url" class="form-label">Page to be displayed outside operating hours</label>
+                    <input type="text" id="off_hours_url" placeholder="https://offhours.site" class="form-input">
                 </div>
             </section>
 
             <!-- Action Buttons -->
-            <footer class="pt-6 border-t border-gray-200 flex flex-col md:flex-row gap-3 justify-between">
+            <footer class="card-footer">
                 <!-- Left-side buttons -->
-                <div class="flex gap-3">
-                    <button type="button" id="restart-btn" class="w-full md:w-auto px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md font-semibold text-sm transition-colors flex items-center justify-center shadow-sm">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15"></path></svg>
+                <div class="footer-button-group">
+                    <button type="button" id="restart-btn" class="button button-secondary">
+                        <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15"></path></svg>
                         Restart Kiosk
                     </button>
-                    <button type="button" id="update-btn" class="w-full md:w-auto px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md font-semibold text-sm transition-colors flex items-center justify-center shadow-sm">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <button type="button" id="update-btn" class="button button-secondary">
+                        <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Update from GitHub
                     </button>
                 </div>
                 <!-- Save Button -->
-                <button type="button" id="save-btn" class="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold text-base transition-colors shadow-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                <button type="button" id="save-btn" class="button button-primary">
+                    <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                     Save Changes
                 </button>
             </footer>
@@ -108,23 +109,23 @@
         // --- Helper: Create URL Entry ---
         function createUrlEntry(url = '', duration = 60) {
             const div = document.createElement('div');
-            div.className = 'flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 url-entry';
+            div.className = 'url-entry'; // Use semantic class
             
             div.innerHTML = `
-                <div class="flex-grow">
-                    <label class="text-xs text-gray-500">URL</label>
-                    <input type="text" value="${url}" placeholder="https://example.com" class="url-input w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
+                <div class="url-entry-group-url">
+                    <label class="form-label">URL</label>
+                    <input type="text" value="${url}" placeholder="https://example.com" class="form-input url-input">
                 </div>
-                <div class="w-24">
-                    <label class="text-xs text-gray-500">Duration (s)</label>
-                    <input type="number" value="${duration}" min="1" class="duration-input w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
+                <div class="url-entry-group-duration">
+                    <label class="form-label">Duration (s)</label>
+                    <input type="number" value="${duration}" min="1" class="form-input duration-input">
                 </div>
-                <button type="button" class="remove-url-btn self-end p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-md transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <button type="button" class="button-remove">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
             `;
             
-            div.querySelector('.remove-url-btn').addEventListener('click', () => {
+            div.querySelector('.button-remove').addEventListener('click', () => {
                 div.remove();
             });
             
@@ -134,19 +135,21 @@
         // --- Helper: Show Status Message ---
         function showStatus(message, type = 'success') {
             statusMessage.textContent = message;
-            statusMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700');
+            // Use semantic classes for state
+            statusMessage.classList.remove('status-success', 'status-error', 'status-loading');
+            statusMessage.classList.add('visible');
             
             if (type === 'success') {
-                statusMessage.classList.add('bg-green-100', 'text-green-700');
+                statusMessage.classList.add('status-success');
             } else if (type === 'error') {
-                statusMessage.classList.add('bg-red-100', 'text-red-700');
+                statusMessage.classList.add('status-error');
             } else { // 'loading'
-                statusMessage.classList.add('bg-blue-100', 'text-blue-700');
+                statusMessage.classList.add('status-loading');
             }
             
             if (type !== 'loading') {
                 setTimeout(() => {
-                    statusMessage.classList.add('hidden');
+                    statusMessage.classList.remove('visible');
                 }, 3000);
             }
         }
@@ -155,14 +158,12 @@
         function setButtonLoading(button, isLoading) {
             if (isLoading) {
                 button.disabled = true;
-                button.classList.add('opacity-75');
                 // Add spinner
                 const spinner = document.createElement('div');
-                spinner.className = 'spinner mr-2';
+                spinner.className = 'spinner'; // Use semantic class
                 button.prepend(spinner);
             } else {
                 button.disabled = false;
-                button.classList.remove('opacity-75');
                 // Remove spinner
                 const spinner = button.querySelector('.spinner');
                 if (spinner) {
@@ -285,5 +286,4 @@
     </script>
 </body>
 </html>
-
 
