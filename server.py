@@ -15,6 +15,9 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Set the template_folder to BASE_DIR to find index.html
+# Set the static_folder to STATIC_DIR, which Flask will automatically
+# serve at the /static/ URL path.
 app = Flask(__name__, template_folder=BASE_DIR, static_folder=STATIC_DIR)
 
 # --- Helper Function ---
@@ -54,10 +57,8 @@ def index():
     """Serves the main HTML page."""
     return render_template('index.html')
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Serves static files (like style.css)."""
-    return send_from_directory(app.static_folder, filename)
+# The redundant @app.route('/static/<path:filename>') has been removed.
+# Flask handles this automatically because we set static_folder=STATIC_DIR.
 
 # --- API Routes ---
 
