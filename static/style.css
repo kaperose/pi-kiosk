@@ -185,13 +185,22 @@ body {
 @media (min-width: 768px) {
     .card-footer {
         flex-direction: row; /* md:flex-row */
+        align-items: center; /* ADDED: To vertically align the button groups */
     }
 }
 
 .footer-button-group {
     display: flex;
+    flex-direction: column; /* ADDED: Stack buttons on mobile */
     gap: 0.75rem; /* gap-3 */
 }
+
+@media (min-width: 768px) {
+    .footer-button-group {
+        flex-direction: row; /* ADDED: Align buttons in a row on desktop */
+    }
+}
+
 
 /* --- Buttons --- */
 .button {
@@ -326,4 +335,5 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
 
