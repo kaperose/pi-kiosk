@@ -32,9 +32,8 @@ def load_config():
         logging.error(f"Error loading config: {e}. Using default values.")
         # Default fallback config
         return {
-            "on_urls": ["https://google.com"],
+            "on_urls": [{"url": "https://google.com", "duration": 60}],
             "off_hours_url": "https://duckduckgo.com",
-            "rotation_time_seconds": 60,
             "on_hours_start": "08:00",
             "on_hours_end": "18:00"
         }
@@ -85,11 +84,18 @@ def kill_chromium():
     browser_process = None
     time.sleep(1) # Give a moment for processes to terminate
 
-def launch_chromium(urls_list):
+def launch_chromium(url_objects_list):
     """Lauches Chromium in kiosk mode with one or more URLs."""
     global browser_process
     kill_chromium() # Ensure no old instances are running
     
+    # Extract URLs from the list of objects
+    urls_list = [item.get('url', 'about:blank') for item in url_objects_list if item.get('url')]
+    
+    if not urls_list:
+        logging.warning("Launch_chromium called, but no valid URLs were provided.")
+        return
+        
     logging.info(f"Launching Chromium with {len(urls_list)} URL(s).")
     
     # All URLs are passed as arguments at the end
@@ -134,6 +140,7 @@ def main():
     logging.info("Starting Kiosk Control Script...")
     current_mode = None # 'on' or 'off'
     last_config = None
+    url_index = 0 # Keep track of the current tab index
 
     while True:
         try:
@@ -151,20 +158,39 @@ def main():
                 # 2. The configuration has changed
                 if current_mode != 'on' or config_changed:
                     logging.info("Entering ON hours mode or config changed.")
-                    if not config['on_urls']:
+                    if not config.get('on_urls'):
                         logging.warning("On hours, but on_urls list is empty. Killing browser.")
                         kill_chromium()
                         current_mode = 'on'
                     else:
                         launch_chromium(config['on_urls'])
                         current_mode = 'on'
+                        url_index = 0 # Reset index on launch
                 
                 # If we are already in 'on' mode and config is same, just rotate tabs
-                elif current_mode == 'on' and config['on_urls']:
-                    rotation_seconds = config.get('rotation_time_seconds', 60)
-                    logging.info(f"Rotating tabs. Waiting for {rotation_seconds}s")
-                    time.sleep(rotation_seconds)
-                    switch_to_next_tab()
+                elif current_mode == 'on' and config.get('on_urls'):
+                    
+                    if not config['on_urls']:
+                        logging.debug("On hours, but no URLs to display. Sleeping.")
+                        time.sleep(60)
+                        continue
+                    
+                    # Ensure index is valid
+                    if url_index >= len(config['on_urls']):
+                        url_index = 0
+                        
+                    # Get current item's config
+                    current_item = config['on_urls'][url_index]
+                    url_to_show = current_item.get('url', 'about:blank')
+                    duration = int(current_item.get('duration', 60))
+
+                    logging.info(f"Displaying {url_to_show} for {duration}s (Tab {url_index + 1}/{len(config['on_urls'])})")
+                    time.sleep(duration)
+                    
+                    # Only switch tab if there is more than one
+                    if len(config['on_urls']) > 1:
+                        switch_to_next_tab()
+                        url_index = (url_index + 1) % len(config['on_urls'])
                 
                 else:
                     # On hours, but no URLs. Just wait.
@@ -180,7 +206,7 @@ def main():
                 # 2. The configuration has changed
                 if current_mode != 'off' or config_changed:
                     logging.info(f"Entering OFF hours mode. Displaying: {url_to_show}")
-                    launch_chromium([url_to_show]) # Pass as a list
+                    launch_chromium([{"url": url_to_show, "duration": 0}]) # Pass as a list of one object
                     current_mode = 'off'
                 
                 # In off-hours, just sleep and re-check periodically
@@ -198,5 +224,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 

@@ -3,221 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk Control Panel</title>
+    <title>Kiosk Config</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Link to the external CSS file -->
+    <!-- Removed inline <style> block and linked to external stylesheet -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
-    <div class="container mx-auto max-w-3xl p-4 pt-8">
-        
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Pi Kiosk Control Panel</h1>
-            <p class="text-gray-600 mb-6">Manage your kiosk settings below. Changes are saved automatically.</p>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
-            <!-- Status Indicator -->
-            <div class="mb-6 p-4 rounded-lg flex items-center" id="status-indicator">
-                <div class="spinner" id="status-spinner"></div>
-                <span class="ml-3 text-lg font-medium" id="status-text">Loading...</span>
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col items-center justify-center mb-6">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             </div>
+            <h1 class="text-3xl font-bold text-gray-800 mt-4">Kiosk Config</h1>
+            <p class="text-gray-500 text-lg">Manage your kiosk display settings and schedules</p>
+        </header>
 
-            <!-- ON Hours Settings -->
-            <div class="mb-6">
-                <h2 class="text-xl font-semibold text-gray-700 mb-3">"ON" Hours Settings</h2>
-                
-                <div class="space-y-4" id="on-urls-container">
-                    <!-- URL inputs will be dynamically added here -->
+        <!-- Main Config Card -->
+        <main class="bg-white rounded-lg shadow-xl p-6 md:p-8 space-y-8">
+            
+            <!-- Status Message -->
+            <div id="status-message" class="p-4 rounded-md text-center font-medium hidden" role="alert"></div>
+            
+            <!-- Display Schedule -->
+            <section>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700 flex items-center">
+                        <svg class="w-6 h-6 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Display Schedule
+                    </h2>
+                    <span class="text-sm font-medium text-green-600 bg-green-100 px-3 py-1 rounded-full">Active</span>
                 </div>
-                
-                <button id="add-url-btn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition-all">
-                    + Add URL
-                </button>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div>
-                        <label for="rotation_time_seconds" class="block text-sm font-medium text-gray-700">Rotation Time (seconds)</label>
-                        <input type="number" id="rotation_time_seconds" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="on_hours_start" class="block text-sm font-medium text-gray-700">Start Time (24h)</label>
-                        <input type="time" id="on_hours_start" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="on_hours_end" class="block text-sm font-medium text-gray-700">End Time (24h)</label>
-                        <input type="time" id="on_hours_end" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                </div>
-            </div>
 
-            <!-- OFF Hours Settings -->
-            <div>
-                <h2 class="text-xl font-semibold text-gray-700 mb-3">"OFF" Hours Settings</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="on_hours_start" class="block text-sm font-medium text-gray-500 mb-1">Start Time (24h)</label>
+                        <input type="time" id="on_hours_start" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="on_hours_end" class="block text-sm font-medium text-gray-500 mb-1">End Time (24h)</label>
+                        <input type="time" id="on_hours_end" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Content Rotation -->
+            <section>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700 flex items-center">
+                         <svg class="w-6 h-6 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"></path></svg>
+                        Content Rotation
+                    </h2>
+                    <button type="button" id="add-url-btn" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md font-medium text-sm transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        Add URL
+                    </button>
+                </div>
+                <div id="on-urls-list" class="space-y-3">
+                    <!-- Dynamic URL entries will be injected here -->
+                </div>
+            </section>
+
+            <!-- Off Hours URL -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Off-Hours Display URL</h2>
                 <div>
-                    <label for="off_hours_url" class="block text-sm font-medium text-gray-700">Off-Hours URL</label>
-                    <input type="url" id="off_hours_url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="https://example.com">
+                    <label for="off_hours_url" class="block text-sm font-medium text-gray-500 mb-1">Page to be displayed outside operating hours</label>
+                    <input type="text" id="off_hours_url" placeholder="https://offhours.site" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                 </div>
-            </div>
+            </section>
 
-        </div>
+            <!-- Action Buttons -->
+            <footer class="pt-6 border-t border-gray-200 flex flex-col md:flex-row gap-3 justify-between">
+                <!-- Left-side buttons -->
+                <div class="flex gap-3">
+                    <button type="button" id="restart-btn" class="w-full md:w-auto px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md font-semibold text-sm transition-colors flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15"></path></svg>
+                        Restart Kiosk
+                    </button>
+                    <button type="button" id="update-btn" class="w-full md:w-auto px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md font-semibold text-sm transition-colors flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Update from GitHub
+                    </button>
+                </div>
+                <!-- Save Button -->
+                <button type="button" id="save-btn" class="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold text-base transition-colors shadow-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Save Changes
+                </button>
+            </footer>
+        </main>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
-            const onUrlsContainer = document.getElementById('on-urls-container');
-            const addUrlBtn = document.getElementById('add-url-btn');
-            const rotationTimeInput = document.getElementById('rotation_time_seconds');
-            const startTimeInput = document.getElementById('on_hours_start');
-            const endTimeInput = document.getElementById('on_hours_end');
-            const offUrlInput = document.getElementById('off_hours_url');
+        // --- DOM Elements ---
+        const onUrlsList = document.getElementById('on-urls-list');
+        const addUrlBtn = document.getElementById('add-url-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const updateBtn = document.getElementById('update-btn');
+        const statusMessage = document.getElementById('status-message');
+
+        // --- Helper: Create URL Entry ---
+        function createUrlEntry(url = '', duration = 60) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 url-entry';
             
-            const statusIndicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-            const statusSpinner = document.getElementById('status-spinner');
+            div.innerHTML = `
+                <div class="flex-grow">
+                    <label class="text-xs text-gray-500">URL</label>
+                    <input type="text" value="${url}" placeholder="https://example.com" class="url-input w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="w-24">
+                    <label class="text-xs text-gray-500">Duration (s)</label>
+                    <input type="number" value="${duration}" min="1" class="duration-input w-full p-2 bg-white border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="button" class="remove-url-btn self-end p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-md transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            `;
+            
+            div.querySelector('.remove-url-btn').addEventListener('click', () => {
+                div.remove();
+            });
+            
+            onUrlsList.appendChild(div);
+        }
 
-            // --- Status Functions ---
-            const showLoading = (message) => {
-                statusText.textContent = message || 'Loading...';
-                statusIndicator.className = 'mb-6 p-4 rounded-lg flex items-center bg-blue-100 text-blue-800';
-                statusSpinner.style.display = 'block';
-            };
-
-            const showSuccess = (message) => {
-                statusText.textContent = message || 'Saved successfully!';
-                statusIndicator.className = 'mb-6 p-4 rounded-lg flex items-center bg-green-100 text-green-800';
-                statusSpinner.style.display = 'none';
-            };
-
-            const showError = (message) => {
-                statusText.textContent = message || 'Error saving data.';
-                statusIndicator.className = 'mb-6 p-4 rounded-lg flex items-center bg-red-100 text-red-800';
-                statusSpinner.style.display = 'none';
-            };
-
-            // --- API Functions ---
-            const api = {
-                get: (endpoint) => fetch(endpoint).then(res => res.json()),
-                post: (endpoint, data) => fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                }).then(res => res.json())
-            };
-
-            // --- Config Management ---
-            let config = {};
-            let saveTimeout;
-
-            // Function to save the full config
-            const saveConfig = async () => {
-                showLoading('Saving...');
-                try {
-                    // Collect all data from the form
-                    const onUrls = Array.from(document.querySelectorAll('.url-input'))
-                                      .map(input => input.value)
-                                      .filter(url => url.trim() !== ''); // Filter out empty strings
-                    
-                    const newConfig = {
-                        on_urls: onUrls.length > 0 ? onUrls : config.on_urls, // Don't save an empty list if it was just loaded
-                        rotation_time_seconds: parseInt(rotationTimeInput.value, 10) || 60,
-                        on_hours_start: startTimeInput.value || '08:00',
-                        on_hours_end: endTimeInput.value || '18:00',
-                        off_hours_url: offUrlInput.value || ''
-                    };
-                    
-                    const response = await api.post('/api/config', newConfig);
-                    if (response.status === 'success') {
-                        showSuccess('Configuration saved!');
-                        config = newConfig; // Update local state
-                        // Re-render URLs to remove any empty fields that were filtered out
-                        renderOnUrls(config.on_urls);
-                    } else {
-                        showError(response.message);
-                    }
-                } catch (err) {
-                    console.error('Save error:', err);
-                    showError('Could not connect to server.');
+        // --- Helper: Show Status Message ---
+        function showStatus(message, type = 'success') {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700');
+            
+            if (type === 'success') {
+                statusMessage.classList.add('bg-green-100', 'text-green-700');
+            } else if (type === 'error') {
+                statusMessage.classList.add('bg-red-100', 'text-red-700');
+            } else { // 'loading'
+                statusMessage.classList.add('bg-blue-100', 'text-blue-700');
+            }
+            
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        // --- Helper: Set Button Loading State ---
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.classList.add('opacity-75');
+                // Add spinner
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner mr-2';
+                button.prepend(spinner);
+            } else {
+                button.disabled = false;
+                button.classList.remove('opacity-75');
+                // Remove spinner
+                const spinner = button.querySelector('.spinner');
+                if (spinner) {
+                    spinner.remove();
                 }
-            };
+            }
+        }
 
-            // Debounce function to delay saving
-            const debouncedSave = () => {
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(saveConfig, 1000); // Save 1 second after last change
-            };
+        // --- API Call: Load Config ---
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const config = await response.json();
 
-            // --- UI Rendering ---
-            const createUrlInput = (url) => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center space-x-2';
-                
-                const input = document.createElement('input');
-                input.type = 'url';
-                input.className = 'url-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500';
-                input.value = url;
-                input.placeholder = 'https://website.com';
-                input.addEventListener('input', debouncedSave);
-                
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-lg text-lg';
-                removeBtn.innerHTML = '&times;';
-                removeBtn.onclick = () => {
-                    div.remove();
-                    debouncedSave(); // Save after removing
-                };
-                
-                div.appendChild(input);
-                div.appendChild(removeBtn);
-                return div;
-            };
+                document.getElementById('on_hours_start').value = config.on_hours_start || '08:00';
+                document.getElementById('on_hours_end').value = config.on_hours_end || '18:00';
+                document.getElementById('off_hours_url').value = config.off_hours_url || '';
 
-            const renderOnUrls = (urls) => {
-                onUrlsContainer.innerHTML = ''; // Clear existing
-                if (urls && urls.length > 0) {
-                    urls.forEach(url => {
-                        onUrlsContainer.appendChild(createUrlInput(url));
+                onUrlsList.innerHTML = '';
+                if (config.on_urls && config.on_urls.length > 0) {
+                    config.on_urls.forEach(item => {
+                        createUrlEntry(item.url, item.duration);
                     });
                 } else {
-                    // Add one empty box if no URLs are set
-                    onUrlsContainer.appendChild(createUrlInput(''));
+                    createUrlEntry('', 60);
                 }
-            };
+            } catch (error) {
+                showStatus(`Error loading config: ${error.message}`, 'error');
+            }
+        }
 
-            // --- Load Initial Data ---
-            const loadConfig = async () => {
-                showLoading('Loading configuration...');
-                try {
-                    config = await api.get('/api/config');
-                    
-                    renderOnUrls(config.on_urls);
-                    rotationTimeInput.value = config.rotation_time_seconds;
-                    startTimeInput.value = config.on_hours_start;
-                    endTimeInput.value = config.on_hours_end;
-                    offUrlInput.value = config.off_hours_url;
-
-                    showSuccess('Configuration loaded.');
-                } catch (err) {
-                    console.error('Load error:', err);
-                    showError('Could not connect to server.');
+        // --- API Call: Save Config ---
+        async function saveConfig() {
+            showStatus('Saving...', 'loading');
+            setButtonLoading(saveBtn, true);
+            
+            const onUrlEntries = document.querySelectorAll('.url-entry');
+            const on_urls = [];
+            onUrlEntries.forEach(entry => {
+                const url = entry.querySelector('.url-input').value;
+                const duration = parseInt(entry.querySelector('.duration-input').value, 10);
+                if (url && duration > 0) {
+                    on_urls.push({ url, duration });
                 }
-            };
-
-            // --- Event Listeners ---
-            addUrlBtn.onclick = () => {
-                onUrlsContainer.appendChild(createUrlInput(''));
-                // Focus the new input
-                onUrlsContainer.lastChild.querySelector('input').focus();
-            };
-
-            // Add listeners to all main inputs
-            [rotationTimeInput, startTimeInput, endTimeInput, offUrlInput].forEach(input => {
-                input.addEventListener('input', debouncedSave);
             });
 
-            // Initial load
-            loadConfig();
-        });
+            const config = {
+                on_hours_start: document.getElementById('on_hours_start').value,
+                on_hours_end: document.getElementById('on_hours_end').value,
+                off_hours_url: document.getElementById('off_hours_url').value,
+                on_urls: on_urls
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                if (!response.ok) throw new Error('Server rejected the save');
+                showStatus('Configuration saved successfully!', 'success');
+            } catch (error) {
+                showStatus(`Error saving config: ${error.message}`, 'error');
+            } finally {
+                setButtonLoading(saveBtn, false);
+            }
+        }
+        
+        // --- API Call: Restart Kiosk ---
+        async function restartKiosk() {
+            if (!confirm('Are you sure you want to restart the kiosk display?')) return;
+            
+            showStatus('Restarting kiosk...', 'loading');
+            setButtonLoading(restartBtn, true);
+            
+            try {
+                const response = await fetch('/api/restart', { method: 'POST' });
+                if (!response.ok) throw new Error('Server responded with an error');
+                showStatus('Kiosk restart command sent!', 'success');
+            } catch (error) {
+                showStatus(`Error restarting kiosk: ${error.message}`, 'error');
+            } finally {
+                setButtonLoading(restartBtn, false);
+            }
+        }
+        
+        // --- API Call: Update from GitHub ---
+        async function updateFromGitHub() {
+            if (!confirm('Are you sure you want to pull updates from GitHub? This will restart all services.')) return;
+            
+            showStatus('Pulling updates from GitHub...', 'loading');
+            setButtonLoading(updateBtn, true);
+            
+            try {
+                const response = await fetch('/api/update', { method: 'POST' });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showStatus('Update successful! Services are restarting.', 'success');
+                    console.log('Update Output:', result.message);
+                } else {
+                    throw new Error(result.message || 'Update failed');
+                }
+            } catch (error) {
+                showStatus(`Error updating: ${error.message}`, 'error');
+            } finally {
+                setButtonLoading(updateBtn, false);
+            }
+        }
+
+        // --- Event Listeners ---
+        addUrlBtn.addEventListener('click', () => createUrlEntry('', 60));
+        saveBtn.addEventListener('click', saveConfig);
+        restartBtn.addEventListener('click', restartKiosk);
+        updateBtn.addEventListener('click', updateFromGitHub);
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', loadConfig);
     </script>
 </body>
 </html>
+
 
