@@ -11,6 +11,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- NEW: Add Sortable.js library for drag-and-drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" xintegrity="sha512-Eezs+g9LqAeoqknMMupTssJirYkiI0uPullRjji9AUHNPJstTBHSSVjdEZ-NULLglnfeowbqsYHIUmcdeTA5UA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
     <!-- All styles are now inline inside this <style> tag -->
     <style>
         /* --- Base & Reset --- */
@@ -143,7 +146,9 @@
             margin-top: 2.5rem;
         }
 
-       
+        .card-section {
+            /* Spacing is handled by the parent */
+        }
 
         /* --- Section Header --- */
         .section-header {
@@ -173,7 +178,9 @@
             text-transform: uppercase;
         }
 
-       
+        .section-content {
+            /* container for form elements */
+        }
         
         .form-grid {
             display: grid;
@@ -181,7 +188,10 @@
             gap: 1.5rem;
         }
 
-       
+        /* --- Form Elements --- */
+        .form-group {
+            /* container for label, description, input */
+        }
         .form-label {
             display: block;
             font-size: 0.875rem; /* text-sm */
@@ -263,14 +273,21 @@
         
         .url-entry {
             display: grid;
-            grid-template-columns: 1fr; /* Mobile: full width */
-            gap: 1rem;
+            /* Mobile: handle, url, duration, remove */
+            grid-template-columns: auto 1fr auto; /* Handle, URL, Remove */
+            grid-template-areas: 
+                "handle url remove"
+                "handle duration remove";
+            gap: 0.5rem 1rem;
             padding: 1.25rem;
             border: 1px solid var(--color-border);
             border-radius: 0.75rem; /* rounded-xl */
             background-color: var(--color-bg-page); /* gray-50 */
+            align-items: center;
         }
         .button-remove {
+            grid-area: remove;
+            justify-self: center;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -290,6 +307,36 @@
         .button-remove svg {
             width: 1.25rem;
             height: 1.25rem;
+        }
+        
+        /* --- NEW: Drag & Drop Styles --- */
+        .drag-handle {
+            grid-area: handle;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            color: var(--color-text-light);
+            width: 2.5rem;
+            height: 100%; /* Fill height of cell */
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        /* Classes added by Sortable.js */
+        .url-entry.sortable-ghost {
+            opacity: 0.4;
+            background-color: #dbeafe; /* blue-100 */
+        }
+        .url-entry.sortable-chosen {
+            box-shadow: var(--shadow);
+            background-color: #eff6ff; /* blue-50 */
+        }
+        .url-entry-group-url {
+            grid-area: url;
+        }
+        .url-entry-group-duration {
+            grid-area: duration;
         }
 
 
@@ -400,9 +447,11 @@
             }
             
             .url-entry {
-                /* URL (6 parts), Duration (3 parts), Button (1 part) */
-                grid-template-columns: 6fr 3fr auto;
+                /* Handle, URL (6 parts), Duration (3 parts), Button (auto) */
+                grid-template-columns: auto 6fr 3fr auto;
+                grid-template-areas: "handle url duration remove"; /* Single row */
                 align-items: flex-end; /* Aligns button with inputs */
+                gap: 0 1rem;
             }
             /* Hide labels for grid view, they are now headers (implied) */
             .url-entry .form-label {
@@ -558,6 +607,13 @@
     <!-- URL Entry Template (for JavaScript) -->
     <template id="url-entry-template">
         <div class="url-entry">
+            <!-- NEW: Drag Handle -->
+            <div class="drag-handle" title="Drag to reorder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                </svg>
+            </div>
+            
             <div class="form-group url-entry-group url-entry-group-url">
                 <label class="form-label">URL</label>
                 <input type="text" class="form-input url-input" placeholder="https://example.com">
@@ -594,13 +650,25 @@
         const appVersionSpan = document.getElementById('app-version'); // For displaying version
 
         // Define a simple version
-        const APP_VERSION = "1.2.0"; // Incremented version
+        const APP_VERSION = "1.3.0"; // Incremented version for drag-drop
         appVersionSpan.textContent = APP_VERSION;
 
         // Store original button content for loading states
         const saveBtnOriginalContent = saveBtn.innerHTML;
         const restartBtnOriginalContent = restartBtn.innerHTML;
 
+        // --- NEW: Initialize Sortable.js ---
+        new Sortable(urlListContainer, {
+            animation: 150,
+            handle: '.drag-handle', // Specify the drag handle
+            ghostClass: 'sortable-ghost', // Class for the ghost element
+            chosenClass: 'sortable-chosen', // Class for the chosen item
+            onEnd: function (evt) {
+                // Fired when the user finishes dragging
+                // Re-number the URL labels
+                updateUrlEntryNumbers();
+            }
+        });
 
         // --- Utility Functions ---
         
@@ -673,6 +741,7 @@
 
             // Collect "on" URLs
             const onUrls = [];
+            // Read the entries *in their current order*
             const urlEntries = urlListContainer.querySelectorAll('.url-entry');
             urlEntries.forEach(entry => {
                 const url = entry.querySelector('.url-input').value.trim();
@@ -834,7 +903,11 @@
         document.addEventListener('DOMContentLoaded', loadConfig);
         saveBtn.addEventListener('click', saveConfig);
         restartBtn.addEventListener('click', restartKiosk);
-        addUrlBtn.addEventListener('click', () => addUrlEntry('', 60, urlListContainer.querySelectorAll('.url-entry').length + 1));
+        addUrlBtn.addEventListener('click', () => {
+            addUrlEntry('', 60, urlListContainer.querySelectorAll('.url-entry').length + 1)
+            // Re-number just in case (e.g., if user deleted all but one)
+            updateUrlEntryNumbers();
+        });
 
         // Update the status badge every 10 seconds and also when times change
         setInterval(updateScheduleStatus, 10000);
