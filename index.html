@@ -5,16 +5,442 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Config</title>
     
-    <!-- 
-      CACHE BUSTING: 
-      The ?v=1.1 query string is added to force your browser
-      to re-download the CSS file instead of using an old, cached one.
-    -->
-    <link rel="stylesheet" href="/static/style.css?v=1.1">
+    <!-- External CSS link removed -->
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- All styles are now inline inside this <style> tag -->
+    <style>
+        /* --- Base & Reset --- */
+        :root {
+            --color-primary: #4f46e5; /* indigo-600 */
+            --color-primary-hover: #4338ca; /* indigo-700 */
+            --color-primary-text: #ffffff;
+            
+            --color-secondary: #ffffff;
+            --color-secondary-hover: #f9fafb; /* gray-50 */
+            --color-secondary-text: #374151; /* gray-700 */
+            --color-secondary-border: #d1d5db; /* gray-300 */
+            
+            --color-danger: #ef4444; /* red-500 */
+            --color-danger-hover: #fee2e2; /* red-100 */
+            --color-danger-text: #b91c1c; /* red-700 */
+
+            --color-add-url: #3b82f6; /* blue-500 */
+            --color-add-url-hover: #dbeafe; /* blue-100 */
+
+            --color-text-base: #374151; /* gray-700 */
+            --color-text-light: #6b7280; /* gray-500 */
+            --color-text-header: #111827; /* gray-900 */
+            
+            --color-bg-page: #f9fafb; /* gray-50 */
+            --color-bg-card: #ffffff;
+            --color-border: #e5e7eb; /* gray-200 */
+            
+            --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Page Layout --- */
+        .page-body {
+            font-family: var(--font-family-sans);
+            background-color: var(--color-bg-page);
+            color: var(--color-text-base);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .page-container {
+            max-width: 48rem; /* max-w-3xl */
+            margin: 0 auto;
+        }
+        
+        /* --- Header --- */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .header-logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3.5rem; /* w-14 */
+            height: 3.5rem; /* h-14 */
+            background-image: linear-gradient(to right, #4f46e5, #7c3aed); /* bg-gradient-to-r from-indigo-600 to-purple-600 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: var(--shadow);
+            padding: 0.75rem; /* p-3 */
+        }
+        .header-logo {
+            width: 100%;
+            height: 100%;
+            color: var(--color-primary-text);
+        }
+        .header-title {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700;
+            color: var(--color-text-header);
+            margin-top: 1rem;
+        }
+        .header-subtitle {
+            font-size: 1.125rem; /* text-lg */
+            color: var(--color-text-light);
+            margin-top: 0.25rem;
+        }
+
+        /* --- Status Message --- */
+        .status-message {
+            padding: 1rem;
+            border-radius: 0.5rem; /* rounded-md */
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            display: none; /* Hidden by default */
+        }
+        .status-message.visible {
+            display: block;
+        }
+        .status-message.status-success {
+            background-color: #d1fae5; /* bg-green-100 */
+            color: #065f46; /* text-green-800 */
+        }
+        .status-message.status-error {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #991b1b; /* text-red-700 */
+        }
+        .status-message.status-loading {
+            background-color: #dbeafe; /* bg-blue-100 */
+            color: #1e40af; /* text-blue-800 */
+        }
+
+        /* --- Config Card --- */
+        .config-card {
+            background-color: var(--color-bg-card);
+            border-radius: 1rem; /* rounded-2xl */
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+        }
+        /* This applies margin-top to every section *after* the first one */
+        .config-card > .card-section + .card-section {
+            margin-top: 2.5rem;
+        }
+
+       
+
+        /* --- Section Header --- */
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 1.5rem;
+        }
+        .section-header-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: var(--color-primary);
+            margin-right: 0.5rem;
+        }
+        .section-header-title {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600;
+            color: var(--color-text-header);
+            flex-grow: 1; /* Pushes badge to the right */
+        }
+        .section-header-badge {
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px; /* rounded-full */
+            text-transform: uppercase;
+        }
+
+       
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* 1 col by default */
+            gap: 1.5rem;
+        }
+
+       
+        .form-label {
+            display: block;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500;
+            color: var(--color-text-base);
+            margin-bottom: 0.5rem;
+        }
+        .form-label-description {
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+            margin-bottom: 0.5rem;
+        }
+        .form-input-container {
+            position: relative;
+        }
+        .form-input {
+            display: block;
+            width: 100%;
+            border: 1px solid var(--color-secondary-border);
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.75rem;
+            font-size: 1rem;
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); /* shadow-sm */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+        }
+        .form-input-icon {
+            position: absolute;
+            top: 50%;
+            right: 0.75rem;
+            transform: translateY(-50%);
+            width: 1.25rem;
+            height: 1.25rem;
+            color: var(--color-text-light);
+            pointer-events: none;
+        }
+        /* Hide default time/number icons in WebKit */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            display: none;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0; 
+        }
+
+        /* --- Content Rotation (URL List) --- */
+        .button-add {
+            display: inline-flex;
+            align-items: center;
+            background-color: transparent;
+            border: none;
+            color: var(--color-add-url);
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem; /* rounded-md */
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .button-add:hover {
+            background-color: var(--color-add-url-hover);
+        }
+        .button-add svg {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.25rem;
+        }
+        
+        .url-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .url-entry {
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile: full width */
+            gap: 1rem;
+            padding: 1.25rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem; /* rounded-xl */
+            background-color: var(--color-bg-page); /* gray-50 */
+        }
+        .button-remove {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-secondary);
+            color: var(--color-danger);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            width: 2.5rem; /* h-10, w-10 */
+            height: 2.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .button-remove:hover {
+            background-color: var(--color-danger-hover);
+            color: var(--color-danger-text);
+        }
+        .button-remove svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+
+        /* --- Card Footer & Buttons --- */
+        .card-footer {
+            display: flex;
+            flex-direction: column; /* Mobile: stack buttons */
+            gap: 1rem;
+            padding-top: 1.5rem;
+            margin-top: 2.5rem;
+            border-top: 1px solid var(--color-border);
+        }
+        .footer-button-group {
+            display: flex;
+            flex-direction: column; /* Mobile: stack buttons */
+            gap: 1rem;
+        }
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem; /* text-sm */
+            padding: 0.625rem 1.25rem; /* py-2.5 px-5 */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .button-icon {
+            width: 1.125rem; /* w-4.5 */
+            height: 1.125rem; /* h-4.5 */
+            margin-right: 0.5rem;
+        }
+        
+        .button-primary {
+            background-color: var(--color-primary);
+            color: var(--color-primary-text);
+        }
+        .button-primary:hover:not(:disabled) {
+            background-color: var(--color-primary-hover);
+        }
+        .button-primary:focus {
+             outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+        }
+        
+        .button-secondary {
+            background-color: var(--color-secondary);
+            color: var(--color-secondary-text);
+            border-color: var(--color-secondary-border);
+            box-shadow: var(--shadow);
+        }
+        .button-secondary:hover:not(:disabled) {
+            background-color: var(--color-secondary-hover);
+        }
+        .button-secondary:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* --- Version Footer --- */
+        .version-footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+        }
+        .version-footer p {
+            margin-bottom: 0.25rem;
+        }
+        .version-footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+        .version-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* --- Spinner Animation --- */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 1.125rem;
+            height: 1.125rem;
+            border-radius: 50%;
+            border-left-color: currentColor; /* Uses button's text color */
+            animation: spin 1s ease infinite;
+            margin-right: 0.5rem;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* --- Responsive Tablet/Desktop Styles --- */
+        @media (min-width: 640px) { /* sm: */
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 cols */
+            }
+            
+            .url-entry {
+                /* URL (6 parts), Duration (3 parts), Button (1 part) */
+                grid-template-columns: 6fr 3fr auto;
+                align-items: flex-end; /* Aligns button with inputs */
+            }
+            /* Hide labels for grid view, they are now headers (implied) */
+            .url-entry .form-label {
+                /* This is a bit of a hack to hide them visually but keep for screen readers */
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
+            }
+            /* We show the first row's labels as headers */
+            .url-list-container .url-entry:first-child .form-label {
+                position: static;
+                width: auto;
+                height: auto;
+                padding: 0;
+                margin: 0;
+                overflow: visible;
+                clip: auto;
+                white-space: normal;
+                margin-bottom: 0.5rem;
+            }
+            
+            .card-footer {
+                flex-direction: row; /* Desktop: side-by-side */
+                justify-content: space-between;
+                align-items: center;
+            }
+            .footer-button-group {
+                flex-direction: row;
+            }
+        }
+
+    </style>
 </head>
 <body class="page-body">
 
@@ -168,7 +594,7 @@
         const appVersionSpan = document.getElementById('app-version'); // For displaying version
 
         // Define a simple version
-        const APP_VERSION = "1.1.0"; // Incremented version
+        const APP_VERSION = "1.2.0"; // Incremented version
         appVersionSpan.textContent = APP_VERSION;
 
         // Store original button content for loading states
