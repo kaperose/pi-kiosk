@@ -4,21 +4,19 @@ import os
 import json
 import subprocess
 import logging
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, make_response
 
 # --- Configuration ---
 # Get the absolute path of the directory where this script is located
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
+TEMPLATE_DIR = BASE_DIR
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Set the template_folder to BASE_DIR to find index.html
-# Set the static_folder to STATIC_DIR, which Flask will automatically
-# serve at the /static/ URL path.
-app = Flask(__name__, template_folder=BASE_DIR, static_folder=STATIC_DIR)
+app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 
 # --- Helper Function ---
 def read_config():
@@ -50,6 +48,18 @@ def write_config(config_data):
         logging.error(f"Error writing config: {e}")
         return False
 
+# --- Cache Control ---
+@app.after_request
+def add_header(response):
+    """
+    Add headers to prevent caching for all config files.
+    This ensures the user always gets the freshest version.
+    """
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 # --- Web Routes ---
 
 @app.route('/')
@@ -57,8 +67,9 @@ def index():
     """Serves the main HTML page."""
     return render_template('index.html')
 
-# The redundant @app.route('/static/<path:filename>') has been removed.
-# Flask handles this automatically because we set static_folder=STATIC_DIR.
+# Flask's built-in static file handling (from static_folder=STATIC_DIR)
+# will handle the /static/ route. We add the cache control
+# with the @app.after_request decorator above.
 
 # --- API Routes ---
 
@@ -92,8 +103,6 @@ def api_restart():
     except Exception as e:
         logging.error(f"Unexpected error during restart: {str(e)}")
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
-
-# The /api/update endpoint has been removed.
 
 # --- Main ---
 if __name__ == '__main__':
