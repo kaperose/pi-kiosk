@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Config</title>
-    <!-- Removed Tailwind CDN and linked to our clean, local stylesheet -->
+    <!-- Link to our new, separate CSS file -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="page-body">
@@ -13,276 +13,362 @@
         <!-- Header -->
         <header class="header">
             <div class="header-logo-container">
-                <svg class="header-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <svg class="header-logo" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122l-1.178.943a1.125 1.125 0 01-1.766-.01l-1.122-1.122a1.125 1.125 0 010-1.59l4.564-4.564a1.125 1.125 0 011.59 0l4.564 4.564a1.125 1.125 0 010 1.59l-1.122 1.122a1.125 1.125 0 01-1.766.01l-1.178-.943A3 3 0 019 18.257v-1.007zM15 9.75a3 3 0 013-3h.008a3 3 0 013 3v.008a3 3 0 01-3 3h-.008a3 3 0 01-3-3V9.75z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9.75a3 3 0 013-3h.008a3 3 0 013 3v.008a3 3 0 01-3 3h-.008a3 3 0 01-3-3V9.75z" />
+                </svg>
             </div>
             <h1 class="header-title">Kiosk Config</h1>
             <p class="header-subtitle">Manage your kiosk display settings and schedules</p>
         </header>
 
+        <!-- Status Message Box -->
+        <div id="status-message" class="status-message" role="alert">
+            <!-- Messages appear here -->
+        </div>
+
         <!-- Main Config Card -->
         <main class="config-card">
-            
-            <!-- Status Message -->
-            <div id="status-message" class="status-message" role="alert"></div>
-            
-            <!-- Display Schedule -->
+
+            <!-- Display Schedule Section -->
             <section class="card-section">
                 <div class="section-header">
-                    <h2 class="section-title">
-                        <svg class="section-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Display Schedule
-                    </h2>
-                    <span class="status-badge">Active</span>
+                    <svg class="section-header-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h2 class="section-header-title">Display Schedule</h2>
+                    <span id="schedule-status-badge" class="section-header-badge" style="display: none;">Active</span>
                 </div>
 
-                <div class="form-grid">
+                <div class="section-content form-grid">
                     <div class="form-group">
-                        <label for="on_hours_start" class="form-label">Start Time (24h)</label>
-                        <input type="time" id="on_hours_start" class="form-input">
+                        <label for="start-time" class="form-label">Start Time (24h)</label>
+                        <div class="form-input-container">
+                            <input type="time" id="start-time" class="form-input" />
+                            <svg class="form-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="on_hours_end" class="form-label">End Time (24h)</label>
-                        <input type="time" id="on_hours_end" class="form-input">
+                        <label for="end-time" class="form-label">End Time (24h)</label>
+                        <div class="form-input-container">
+                            <input type="time" id="end-time" class="form-input" />
+                            <svg class="form-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Content Rotation -->
+            <!-- Content Rotation Section -->
             <section class="card-section">
                 <div class="section-header">
-                    <h2 class="section-title">
-                         <svg class="section-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"></path></svg>
-                        Content Rotation
-                    </h2>
-                    <button type="button" id="add-url-btn" class="button-add">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <svg class="section-header-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                    </svg>
+                    <h2 class="section-header-title">Content Rotation</h2>
+                    <button id="add-url-btn" class="button-add">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
                         Add URL
                     </button>
                 </div>
-                <div id="on-urls-list" class="url-list">
-                    <!-- Dynamic URL entries will be injected here -->
+
+                <div id="url-list-container" class="section-content">
+                    <!-- URL entries will be dynamically inserted here -->
                 </div>
             </section>
 
-            <!-- Off Hours URL -->
+            <!-- Off-Hours Display URL Section -->
             <section class="card-section">
-                <div class="section-header">
-                    <h2 class="section-title">Off-Hours Display URL</h2>
-                </div>
                 <div class="form-group">
-                    <label for="off_hours_url" class="form-label">Page to be displayed outside operating hours</label>
-                    <input type="text" id="off_hours_url" placeholder="https://offhours.site" class="form-input">
+                    <label for="off-hours-url" class="form-label">Off-Hours Display URL</label>
+                    <p class="form-label-description">This page will be displayed outside operating hours</p>
+                    <input type="text" id="off-hours-url" class="form-input" placeholder="https://example.com" />
                 </div>
             </section>
 
-            <!-- Action Buttons -->
+            <!-- Action Buttons Footer -->
             <footer class="card-footer">
-                <!-- Left-side buttons -->
                 <div class="footer-button-group">
-                    <button type="button" id="restart-btn" class="button button-secondary">
-                        <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15"></path></svg>
+                    <button id="restart-btn" class="button button-secondary">
+                        <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
                         Restart Kiosk
                     </button>
-                    <button type="button" id="update-btn" class="button button-secondary">
-                        <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Update from GitHub
-                    </button>
+                    <!-- "Update from GitHub" button has been removed -->
                 </div>
-                <!-- Save Button -->
-                <button type="button" id="save-btn" class="button button-primary">
-                    <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                
+                <button id="save-btn" class="button button-primary">
+                    <svg class="button-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
                     Save Changes
                 </button>
             </footer>
+
         </main>
     </div>
 
+    <!-- URL Entry Template (for JavaScript) -->
+    <template id="url-entry-template">
+        <div class="url-entry">
+            <div class="form-group url-entry-group url-entry-group-url">
+                <label class="form-label">URL</label>
+                <input type="text" class="form-input url-input" placeholder="https://example.com">
+            </div>
+            <div class="form-group url-entry-group url-entry-group-duration">
+                <label class="form-label">Duration (s)</label>
+                <input type="number" class="form-input duration-input" value="60">
+            </div>
+            <button class="button-remove" title="Remove URL">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c.342.052.682.107 1.022.166m11.538 0l-2.175 6.525a.375.375 0 01-.675.025L10.5 8.25l-2.175 6.525a.375.375 0 01-.675-.025L5.65 5.79m11.538 0M5.65 5.79l-.004-.004L5.644 5.786M5.65 5.79z" />
+                </svg>
+            </button>
+        </div>
+    </template>
+
     <script>
-        // --- DOM Elements ---
-        const onUrlsList = document.getElementById('on-urls-list');
-        const addUrlBtn = document.getElementById('add-url-btn');
+        // --- Constants and DOM Elements ---
+        const API_URL = '/api/config';
+        const RESTART_URL = '/api/restart';
+        
         const saveBtn = document.getElementById('save-btn');
         const restartBtn = document.getElementById('restart-btn');
-        const updateBtn = document.getElementById('update-btn');
+        const addUrlBtn = document.getElementById('add-url-btn');
+        const urlListContainer = document.getElementById('url-list-container');
+        const urlEntryTemplate = document.getElementById('url-entry-template');
+        
+        const startTimeInput = document.getElementById('start-time');
+        const endTimeInput = document.getElementById('end-time');
+        const offHoursUrlInput = document.getElementById('off-hours-url');
+        
         const statusMessage = document.getElementById('status-message');
+        const scheduleStatusBadge = document.getElementById('schedule-status-badge');
+        
+        // Store original button text/icons
+        const saveBtnOriginal = saveBtn.innerHTML;
 
-        // --- Helper: Create URL Entry ---
-        function createUrlEntry(url = '', duration = 60) {
-            const div = document.createElement('div');
-            div.className = 'url-entry'; // Use semantic class
-            
-            div.innerHTML = `
-                <div class="url-entry-group-url">
-                    <label class="form-label">URL</label>
-                    <input type="text" value="${url}" placeholder="https://example.com" class="form-input url-input">
-                </div>
-                <div class="url-entry-group-duration">
-                    <label class="form-label">Duration (s)</label>
-                    <input type="number" value="${duration}" min="1" class="form-input duration-input">
-                </div>
-                <button type="button" class="button-remove">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-            `;
-            
-            div.querySelector('.button-remove').addEventListener('click', () => {
-                div.remove();
-            });
-            
-            onUrlsList.appendChild(div);
-        }
-
-        // --- Helper: Show Status Message ---
-        function showStatus(message, type = 'success') {
+        // --- Utility Functions ---
+        
+        function showStatus(message, type = 'loading') {
             statusMessage.textContent = message;
-            // Use semantic classes for state
-            statusMessage.classList.remove('status-success', 'status-error', 'status-loading');
-            statusMessage.classList.add('visible');
-            
-            if (type === 'success') {
-                statusMessage.classList.add('status-success');
-            } else if (type === 'error') {
-                statusMessage.classList.add('status-error');
-            } else { // 'loading'
-                statusMessage.classList.add('status-loading');
-            }
-            
-            if (type !== 'loading') {
-                setTimeout(() => {
-                    statusMessage.classList.remove('visible');
-                }, 3000);
-            }
+            statusMessage.className = `status-message visible status-${type}`;
         }
         
-        // --- Helper: Set Button Loading State ---
-        function setButtonLoading(button, isLoading) {
-            if (isLoading) {
-                button.disabled = true;
-                // Add spinner
-                const spinner = document.createElement('div');
-                spinner.className = 'spinner'; // Use semantic class
-                button.prepend(spinner);
-            } else {
-                button.disabled = false;
-                // Remove spinner
-                const spinner = button.querySelector('.spinner');
-                if (spinner) {
-                    spinner.remove();
-                }
-            }
+        function hideStatus() {
+            statusMessage.textContent = '';
+            statusMessage.className = 'status-message';
         }
 
-        // --- API Call: Load Config ---
+        function setButtonLoading(btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner"></div> Processing...`;
+        }
+
+        function resetButton(btn, originalContent) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+
+        // --- Core Functions ---
+
+        /**
+         * Loads the current config from the server and populates the form
+         */
         async function loadConfig() {
+            showStatus('Loading configuration...', 'loading');
             try {
-                const response = await fetch('/api/config');
-                if (!response.ok) throw new Error('Network response was not ok');
-                const config = await response.json();
-
-                document.getElementById('on_hours_start').value = config.on_hours_start || '08:00';
-                document.getElementById('on_hours_end').value = config.on_hours_end || '18:00';
-                document.getElementById('off_hours_url').value = config.off_hours_url || '';
-
-                onUrlsList.innerHTML = '';
-                if (config.on_urls && config.on_urls.length > 0) {
-                    config.on_urls.forEach(item => {
-                        createUrlEntry(item.url, item.duration);
-                    });
-                } else {
-                    createUrlEntry('', 60);
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
                 }
+                const config = await response.json();
+                
+                // Populate schedule
+                startTimeInput.value = config.on_hours_start;
+                endTimeInput.value = config.on_hours_end;
+                
+                // Populate off-hours URL
+                offHoursUrlInput.value = config.off_hours_url;
+
+                // Populate URL list
+                urlListContainer.innerHTML = ''; // Clear existing
+                if (config.on_urls && config.on_urls.length > 0) {
+                    config.on_urls.forEach(entry => addUrlEntry(entry.url, entry.duration));
+                } else {
+                    // Add one blank entry if none exist
+                    addUrlEntry('', 60);
+                }
+                
+                updateScheduleStatus();
+                hideStatus();
+                
             } catch (error) {
+                console.error('Error loading config:', error);
                 showStatus(`Error loading config: ${error.message}`, 'error');
             }
         }
 
-        // --- API Call: Save Config ---
+        /**
+         * Gathers data from the form and saves it to the server
+         */
         async function saveConfig() {
-            showStatus('Saving...', 'loading');
-            setButtonLoading(saveBtn, true);
-            
-            const onUrlEntries = document.querySelectorAll('.url-entry');
-            const on_urls = [];
-            onUrlEntries.forEach(entry => {
-                const url = entry.querySelector('.url-input').value;
-                const duration = parseInt(entry.querySelector('.duration-input').value, 10);
-                if (url && duration > 0) {
-                    on_urls.push({ url, duration });
+            setButtonLoading(saveBtn);
+            showStatus('Saving changes...', 'loading');
+
+            // Collect "on" URLs
+            const onUrls = [];
+            const urlEntries = urlListContainer.querySelectorAll('.url-entry');
+            urlEntries.forEach(entry => {
+                const url = entry.querySelector('.url-input').value.trim();
+                const duration = parseInt(entry.querySelector('.duration-input').value, 10) || 60;
+                if (url) { // Only add if URL is not empty
+                    onUrls.push({ url, duration });
                 }
             });
 
-            const config = {
-                on_hours_start: document.getElementById('on_hours_start').value,
-                on_hours_end: document.getElementById('on_hours_end').value,
-                off_hours_url: document.getElementById('off_hours_url').value,
-                on_urls: on_urls
+            // Construct config object
+            const configData = {
+                on_hours_start: startTimeInput.value,
+                on_hours_end: endTimeInput.value,
+                off_hours_url: offHoursUrlInput.value.trim(),
+                on_urls: onUrls
             };
 
             try {
-                const response = await fetch('/api/config', {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
+                    body: JSON.stringify(configData)
                 });
-                if (!response.ok) throw new Error('Server rejected the save');
-                showStatus('Configuration saved successfully!', 'success');
-            } catch (error) {
-                showStatus(`Error saving config: ${error.message}`, 'error');
-            } finally {
-                setButtonLoading(saveBtn, false);
-            }
-        }
-        
-        // --- API Call: Restart Kiosk ---
-        async function restartKiosk() {
-            if (!confirm('Are you sure you want to restart the kiosk display?')) return;
-            
-            showStatus('Restarting kiosk...', 'loading');
-            setButtonLoading(restartBtn, true);
-            
-            try {
-                const response = await fetch('/api/restart', { method: 'POST' });
-                if (!response.ok) throw new Error('Server responded with an error');
-                showStatus('Kiosk restart command sent!', 'success');
-            } catch (error) {
-                showStatus(`Error restarting kiosk: ${error.message}`, 'error');
-            } finally {
-                setButtonLoading(restartBtn, false);
-            }
-        }
-        
-        // --- API Call: Update from GitHub ---
-        async function updateFromGitHub() {
-            if (!confirm('Are you sure you want to pull updates from GitHub? This will restart all services.')) return;
-            
-            showStatus('Pulling updates from GitHub...', 'loading');
-            setButtonLoading(updateBtn, true);
-            
-            try {
-                const response = await fetch('/api/update', { method: 'POST' });
+                
                 const result = await response.json();
                 
-                if (response.ok) {
-                    showStatus('Update successful! Services are restarting.', 'success');
-                    console.log('Update Output:', result.message);
-                } else {
-                    throw new Error(result.message || 'Update failed');
+                if (!response.ok) {
+                    throw new Error(result.message || `Server responded with ${response.status}`);
                 }
+                
+                showStatus(result.message, 'success');
+                
             } catch (error) {
-                showStatus(`Error updating: ${error.message}`, 'error');
+                console.error('Error saving config:', error);
+                showStatus(`Error saving config: ${error.message}`, 'error');
             } finally {
-                setButtonLoading(updateBtn, false);
+                resetButton(saveBtn, saveBtnOriginal);
+                // Hide success/error message after 3 seconds
+                setTimeout(hideStatus, 3000);
+            }
+        }
+
+        /**
+         * Sends a request to restart the kiosk service
+         */
+        async function restartKiosk() {
+            if (!confirm('Are you sure you want to restart the kiosk display?')) {
+                return;
+            }
+            
+            const restartBtnOriginal = restartBtn.innerHTML;
+            setButtonLoading(restartBtn);
+            showStatus('Sending restart command...', 'loading');
+
+            try {
+                const response = await fetch(RESTART_URL, { method: 'POST' });
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || `Server responded with ${response.status}`);
+                }
+                
+                showStatus(result.message, 'success');
+                
+            } catch (error) {
+                console.error('Error restarting kiosk:', error);
+                showStatus(`Error restarting kiosk: ${error.message}`, 'error');
+            } finally {
+                resetButton(restartBtn, restartBtnOriginal);
+                setTimeout(hideStatus, 3000);
+            }
+        }
+        
+        /**
+         * Creates and adds a new URL entry row to the UI
+         */
+        function addUrlEntry(url = '', duration = 60) {
+            const templateClone = urlEntryTemplate.content.cloneNode(true);
+            const urlEntry = templateClone.querySelector('.url-entry');
+            
+            urlEntry.querySelector('.url-input').value = url;
+            urlEntry.querySelector('.duration-input').value = duration;
+            
+            urlEntry.querySelector('.button-remove').addEventListener('click', () => {
+                // Prevent removing the last item
+                if (urlListContainer.querySelectorAll('.url-entry').length > 1) {
+                    urlEntry.remove();
+                } else {
+                    alert('You must have at least one URL entry.');
+                }
+            });
+            
+            urlListContainer.appendChild(urlEntry);
+        }
+
+        /**
+         * Checks if the kiosk is currently "ON" or "OFF" and updates the badge
+         */
+        function updateScheduleStatus() {
+            try {
+                const now = new Date();
+                const currentTime = now.toTimeString().slice(0, 5); // "HH:MM"
+                
+                const start = startTimeInput.value;
+                const end = endTimeInput.value;
+
+                let isActive = false;
+                if (start && end) {
+                    if (start < end) {
+                        // Simple case: 08:00 - 18:00
+                        isActive = currentTime >= start && currentTime < end;
+                    } else {
+                        // Overnight case: 22:00 - 06:00
+                        isActive = currentTime >= start || currentTime < end;
+                    }
+                }
+                
+                if (isActive) {
+                    scheduleStatusBadge.textContent = 'Active';
+                    scheduleStatusBadge.style.backgroundColor = '#d1fae5'; // bg-green-100
+                    scheduleStatusBadge.style.color = '#065f46'; // text-green-800
+                } else {
+                    scheduleStatusBadge.textContent = 'Off-Hours';
+                    scheduleStatusBadge.style.backgroundColor = '#fee2e2'; // bg-red-100
+                    scheduleStatusBadge.style.color = '#991b1b'; // text-red-700
+                }
+                scheduleStatusBadge.style.display = 'inline-block';
+                
+            } catch (e) {
+                console.error("Could not update schedule status:", e);
+                scheduleStatusBadge.style.display = 'none';
             }
         }
 
         // --- Event Listeners ---
-        addUrlBtn.addEventListener('click', () => createUrlEntry('', 60));
+        document.addEventListener('DOMContentLoaded', loadConfig);
         saveBtn.addEventListener('click', saveConfig);
         restartBtn.addEventListener('click', restartKiosk);
-        updateBtn.addEventListener('click', updateFromGitHub);
+        addUrlBtn.addEventListener('click', () => addUrlEntry('', 60));
+
+        // Update the status badge every 10 seconds and also when times change
+        setInterval(updateScheduleStatus, 10000);
+        startTimeInput.addEventListener('change', updateScheduleStatus);
+        endTimeInput.addEventListener('change', updateScheduleStatus);
         
-        // --- Initial Load ---
-        document.addEventListener('DOMContentLoaded', loadConfig);
     </script>
 </body>
 </html>

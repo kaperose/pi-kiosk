@@ -60,8 +60,7 @@ body {
     padding: 1.5rem; /* p-6 */
 }
 
-/* * --- THIS IS THE FIX ---
- * This rule applies a margin-top to any direct child of .config-card
+/* * This rule applies a margin-top to any direct child of .config-card
  * that comes *after* another child. This correctly creates the 
  * spacing between sections (like Tailwind's space-y-8).
 */
@@ -75,8 +74,6 @@ body {
         grid-template-columns: repeat(2, minmax(0, 1fr)); /* md:grid-cols-2 */
     }
 }
-
-/* REMOVED empty .card-section ruleset */
 
 .section-header {
     display: flex;
@@ -168,6 +165,13 @@ body {
     pointer-events: none;
 }
 
+.form-hint {
+    font-size: 0.875rem; /* text-sm */
+    color: #6b7280; /* text-gray-500 */
+    margin-top: 0.5rem; /* mt-2 */
+}
+
+
 /* --- URL Entry --- */
 .url-list {
     display: flex;
@@ -223,19 +227,19 @@ body {
 @media (min-width: 768px) {
     .card-footer {
         flex-direction: row; /* md:flex-row */
-        align-items: center; /* ADDED: To vertically align the button groups */
+        align-items: center; /* To vertically align the button groups */
     }
 }
 
 .footer-button-group {
     display: flex;
-    flex-direction: column; /* ADDED: Stack buttons on mobile */
+    flex-direction: column; /* Stack buttons on mobile */
     gap: 0.75rem; /* gap-3 */
 }
 
 @media (min-width: 768px) {
     .footer-button-group {
-        flex-direction: row; /* ADDED: Align buttons in a row on desktop */
+        flex-direction: row; /* Align buttons in a row on desktop */
     }
 }
 

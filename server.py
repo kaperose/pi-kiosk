@@ -92,31 +92,7 @@ def api_restart():
         logging.error(f"Unexpected error during restart: {str(e)}")
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
-@app.route('/api/update', methods=['POST'])
-def api_update():
-    """Pulls updates from Git and restarts the display service."""
-    try:
-        # Run git pull. This needs the sudoers file to be correct.
-        # This command runs 'git pull' as the user 'pi' (or your user)
-        # We use the full path '/usr/bin/git' for security, as defined in sudoers.
-        pull_cmd = ['sudo', '/usr/bin/git', 'pull']
-        git_process = subprocess.run(pull_cmd, cwd=BASE_DIR, capture_output=True, text=True, check=True)
-        
-        # If pull is successful, restart ONLY the display service.
-        # **REMOVED** the line that restarts 'kiosk-web.service' to prevent the "Failed to fetch" error.
-        subprocess.run(['sudo', '/bin/systemctl', 'restart', 'kiosk-display.service'], check=True)
-        
-        return jsonify({"message": "Update successful. Kiosk display is restarting.", "details": git_process.stdout}), 200
-    
-    except subprocess.CalledProcessError as e:
-        # This catches errors from git pull or systemctl
-        error_message = f"Update command failed with error: {e.stderr.strip()}"
-        logging.error(error_message)
-        return jsonify({"message": error_message, "details": e.stderr.strip()}), 500
-    except Exception as e:
-        # Catch-all for other errors
-        logging.error(f"Unexpected error during update: {str(e)}")
-        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+# The /api/update endpoint has been removed.
 
 # --- Main ---
 if __name__ == '__main__':
