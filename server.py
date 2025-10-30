@@ -1,64 +1,85 @@
 #!/usr/bin/env python3
 
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import json
 import os
-from flask import Flask, request, jsonify, send_from_directory, render_template_string
 
-# --- Configuration ---
+app = Flask(__name__, template_folder='.')
+
 # Get the absolute path of the directory where this script is located
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
-HTML_FILE = os.path.join(BASE_DIR, 'index.html')
+STATIC_DIR = os.path.join(BASE_DIR, 'static') # Define static folder path
 
-app = Flask(__name__)
+# --- Helper Functions ---
 
-# --- API Endpoints ---
+def load_config():
+    """Loads the configuration from config.json"""
+    if not os.path.exists(CONFIG_FILE):
+        # Create a default config if it doesn't exist
+        default_config = {
+            "on_urls": ["https://google.com"],
+            "off_hours_url": "https://duckduckgo.com",
+            "rotation_time_seconds": 60,
+            "on_hours_start": "08:00",
+            "on_hours_end": "18:00"
+        }
+        save_config(default_config)
+        return default_config
+    
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        # If file is corrupt, create a new default one
+        return load_config() # This will trigger the default creation
+
+def save_config(config_data):
+    """Saves the configuration to config.json"""
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config_data, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving config: {e}")
+        return False
+
+# --- API Routes ---
+
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    """API endpoint to get the current configuration."""
+    return jsonify(load_config())
+
+@app.route('/api/config', methods=['POST'])
+def set_config():
+    """API endpoint to update the configuration."""
+    data = request.json
+    if save_config(data):
+        return jsonify({"status": "success", "message": "Configuration saved."})
+    else:
+        return jsonify({"status": "error", "message": "Failed to save configuration."}), 500
+
+# --- Static File Route ---
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serves static files from the 'static' directory."""
+    return send_from_directory(STATIC_DIR, filename)
+
+# --- Frontend Route ---
 
 @app.route('/')
 def index():
-    """Serves the main index.html file."""
-    try:
-        # We use render_template_string to serve the file from the same directory
-        return render_template_string(open(HTML_FILE).read())
-    except FileNotFoundError:
-        return "Error: index.html not found.", 404
-
-@app.route('/config', methods=['GET'])
-def get_config():
-    """Provides the current configuration as JSON."""
-    try:
-        with open(CONFIG_FILE, 'r') as f:
-            config = json.load(f)
-        return jsonify(config)
-    except Exception as e:
-        print(f"Error reading config: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/config', methods=['POST'])
-def set_config():
-    """Updates the configuration file from posted JSON data."""
-    try:
-        data = request.json
-        
-        # Basic validation
-        if not all(k in data for k in ['on_urls', 'off_hours_url', 'rotation_time_seconds', 'on_hours_start', 'on_hours_end']):
-            return jsonify({"error": "Missing required fields"}), 400
-            
-        # Convert rotation time to int
-        data['rotation_time_seconds'] = int(data['rotation_time_seconds'])
-
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(data, f, indent=4)
-            
-        print(f"Config updated successfully: {data}")
-        return jsonify({"success": True, "config": data})
-    except Exception as e:
-        print(f"Error writing config: {e}")
-        return jsonify({"error": str(e)}), 500
-
-# --- Run Server ---
+    """Serves the main HTML page."""
+    return render_template('index.html')
 
 if __name__ == '__main__':
-    print(f"Starting web server on http://0.0.0.0:8080")
-    print("Access this from another computer using http://<pi-ip-address>:8080")
+    # Make sure the static directory exists
+    if not os.path.exists(STATIC_DIR):
+        os.makedirs(STATIC_DIR)
+        
+    print(f"Web interface running on http://0.0.0.0:8080")
+    print(f"Serving static files from: {STATIC_DIR}")
     app.run(host='0.0.0.0', port=8080, debug=True)
+

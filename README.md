@@ -10,9 +10,11 @@ kiosk_control.py: The main Python script that runs the kiosk. It reads the confi
 
 server.py: A Python Flask web server that hosts the web interface and provides API endpoints to read/write the configuration.
 
-index.html: The frontend web interface. It's a single HTML file with CSS (Tailwind) and JavaScript to talk to the server.py backend.
+index.html: The frontend web interface (the main HTML file).
 
 config.json: A JSON file that stores all the user-configurable settings.
+
+static/style.css: A CSS file containing styles for the index.html web interface.
 
 Setup Instructions
 
@@ -30,6 +32,7 @@ sudo apt-get update
 sudo apt-get upgrade
 
 
+
 Then, install Chromium and Python dependencies:
 
 # Install Chromium
@@ -37,6 +40,7 @@ sudo apt-get install chromium-browser -y
 
 # Install required Python libraries
 pip install Flask psutil
+
 
 
 (Note: psutil is used to find and kill old Chromium processes safely.)
@@ -50,6 +54,7 @@ cd /path/to/pi-kiosk
 
 # Run the server
 python3 server.py
+
 
 
 You will see output indicating the server is running on port 8080. You can now access the web interface from any other computer on the same network by visiting:
@@ -68,6 +73,7 @@ You can run the script directly from the terminal. This is good for checking for
 python3 kiosk_control.py
 
 
+
 (Note: This will only work if you are in the Pi's desktop environment, not over SSH unless you configure the DISPLAY variable).
 
 B. For Automatic Startup (Recommended):
@@ -78,9 +84,11 @@ Create the autostart directory if it doesn't exist:
 mkdir -p ~/.config/lxsession/LXDE-pi
 
 
+
 Open the autostart file in a text editor:
 
 nano ~/.config/lxsession/LXDE-pi/autostart
+
 
 
 Add the following lines. Make sure to use the absolute path to your kiosk_control.py script.
@@ -96,6 +104,7 @@ Add the following lines. Make sure to use the absolute path to your kiosk_contro
 
 # Run the kiosk script (replace with your actual path)
 @python3 /home/pi/pi-kiosk/kiosk_control.py
+
 
 
 Save the file (Ctrl+O, Enter) and exit (Ctrl+X).
