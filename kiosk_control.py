@@ -5,7 +5,7 @@ import time
 import json
 import os
 import psutil
-import logging # <-- Added this import
+import logging
 from datetime import datetime
 
 # --- Configuration ---
@@ -15,6 +15,9 @@ CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Global process variable
+browser_process = None
 
 # --- Helper Functions ---
 
@@ -52,98 +55,136 @@ def is_on_hours(config):
         return False
 
 def kill_chromium():
-    """Finds and terminates all running chromium-browser processes."""
-    logging.debug("Attempting to kill existing Chromium processes...")
+    global browser_process
+    if browser_process:
+        logging.info("Terminating existing Chromium process.")
+        try:
+            # Get all children of the main process (includes all tabs)
+            parent = psutil.Process(browser_process.pid)
+            children = parent.children(recursive=True)
+            for child in children:
+                child.kill()
+            parent.kill()
+            browser_process.wait(timeout=5)
+            logging.info("Chromium terminated.")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired, psutil.ZombieProcess):
+            logging.debug("Could not cleanly terminate process, or it was already dead.")
+            pass
+    
+    # Fallback: Find and terminate all running chromium processes by name
+    # This is a bit more aggressive but ensures a clean state
+    logging.debug("Running fallback process kill by name...")
     for proc in psutil.process_iter(['pid', 'name']):
         if 'chromium' in proc.info['name'].lower():
             try:
-                proc.kill()
-                logging.info(f"Killed existing Chromium process (PID: {proc.info['pid']})")
+                psutil.Process(proc.info['pid']).kill()
+                logging.info(f"Killed lingering Chromium process (PID: {proc.info['pid']})")
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 logging.debug(f"Could not kill process {proc.info.get('pid', 'N/A')}.")
                 pass
-    # Give a moment for processes to terminate
-    time.sleep(1)
+    browser_process = None
+    time.sleep(1) # Give a moment for processes to terminate
 
-def launch_chromium(url):
-    """Lauches Chromium in kiosk mode."""
-    logging.info(f"Launching Chromium with URL: {url}")
+def launch_chromium(urls_list):
+    """Lauches Chromium in kiosk mode with one or more URLs."""
+    global browser_process
+    kill_chromium() # Ensure no old instances are running
     
-    # Define the command to start Chromium
+    logging.info(f"Launching Chromium with {len(urls_list)} URL(s).")
+    
+    # All URLs are passed as arguments at the end
     command = [
-        'chromium',  # Changed from 'chromium-browser'
+        'chromium',
         '--kiosk',
         '--disable-infobars',
         '--noerrdialogs',
         '--incognito',
         '--check-for-update-interval=31536000',
-        url
-    ]
-    # Use Popen to launch without blocking
+    ] + urls_list
+    
     try:
-        subprocess.Popen(command, env=os.environ) # <-- Fixed variable name from 'cmd' to 'command'
+        # Use Popen to launch without blocking
+        # We pass the full command, including all URLs
+        browser_process = subprocess.Popen(command, env=os.environ)
+        logging.info(f"Chromium process started with PID: {browser_process.pid}")
+        # Give the browser time to open all tabs
+        time.sleep(10) 
     except FileNotFoundError:
         logging.error("CRITICAL: 'chromium' command not found. Make sure it is installed and in your PATH.")
     except Exception as e:
         logging.error(f"Failed to launch Chromium: {e}")
 
+def switch_to_next_tab():
+    """Uses xdotool to simulate a 'Ctrl+Tab' keypress to switch tabs."""
+    try:
+        logging.debug("Switching to next tab (Ctrl+Tab)")
+        # 'key' command simulates key press and release
+        subprocess.run(['xdotool', 'key', 'ctrl+Tab'], check=True, env=os.environ)
+    except FileNotFoundError:
+        logging.error("CRITICAL: 'xdotool' command not found. Please install it with 'sudo apt-get install xdotool'")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to switch tabs using xdotool: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred during tab switch: {e}")
+
+
 # --- Main Kiosk Loop ---
 
 def main():
     logging.info("Starting Kiosk Control Script...")
-    current_url = None
     current_mode = None # 'on' or 'off'
-    url_index = 0
+    last_config = None
 
     while True:
         try:
             config = load_config()
             on_hours = is_on_hours(config)
+            
+            # Detect if config has changed, easier than full state check
+            config_changed = (config != last_config)
+            last_config = config
 
             if on_hours:
                 # --- ON HOURS LOGIC ---
-                if current_mode != 'on' or not config['on_urls']:
-                    # Switching to 'on' mode or URL list is empty
-                    logging.info("Entering ON hours mode.")
-                    kill_chromium()
-                    current_mode = 'on'
-                    url_index = 0
-                    
-                if not config['on_urls']:
-                    logging.warning("On hours, but on_urls list is empty. Sleeping.")
-                    time.sleep(30) # Check again in 30s
-                    continue
-
-                # Get the next URL
-                url_to_show = config['on_urls'][url_index]
+                # We need to relaunch if:
+                # 1. We are just switching from 'off' mode
+                # 2. The configuration has changed
+                if current_mode != 'on' or config_changed:
+                    logging.info("Entering ON hours mode or config changed.")
+                    if not config['on_urls']:
+                        logging.warning("On hours, but on_urls list is empty. Killing browser.")
+                        kill_chromium()
+                        current_mode = 'on'
+                    else:
+                        launch_chromium(config['on_urls'])
+                        current_mode = 'on'
                 
-                if url_to_show != current_url:
-                    logging.info(f"Changing URL to: {url_to_show}")
-                    kill_chromium()
-                    launch_chromium(url_to_show)
-                    current_url = url_to_show
+                # If we are already in 'on' mode and config is same, just rotate tabs
+                elif current_mode == 'on' and config['on_urls']:
+                    rotation_seconds = config.get('rotation_time_seconds', 60)
+                    logging.info(f"Rotating tabs. Waiting for {rotation_seconds}s")
+                    time.sleep(rotation_seconds)
+                    switch_to_next_tab()
                 
-                # Increment index for next rotation
-                url_index = (url_index + 1) % len(config['on_urls'])
-                
-                # Wait for the rotation time
-                rotation_seconds = config.get('rotation_time_seconds', 60)
-                logging.info(f"Displaying {current_url} for {rotation_seconds}s")
-                time.sleep(rotation_seconds)
+                else:
+                    # On hours, but no URLs. Just wait.
+                    logging.debug("On hours, but no URLs to display. Sleeping.")
+                    time.sleep(60)
 
             else:
                 # --- OFF HOURS LOGIC ---
                 url_to_show = config['off_hours_url']
                 
-                if current_mode != 'off' or current_url != url_to_show:
+                # We need to relaunch if:
+                # 1. We are just switching from 'on' mode
+                # 2. The configuration has changed
+                if current_mode != 'off' or config_changed:
                     logging.info(f"Entering OFF hours mode. Displaying: {url_to_show}")
-                    kill_chromium()
+                    launch_chromium([url_to_show]) # Pass as a list
                     current_mode = 'off'
-                    launch_chromium(url_to_show)
-                    current_url = url_to_show
                 
                 # In off-hours, just sleep and re-check periodically
-                logging.debug(f"Off hours. Displaying {current_url}. Re-checking in 60s.")
+                logging.debug(f"Off hours. Displaying {url_to_show}. Re-checking in 60s.")
                 time.sleep(60)
 
         except KeyboardInterrupt:
@@ -157,4 +198,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
