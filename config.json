@@ -1,0 +1,11 @@
+{
+    "on_urls": [
+        "https://www.google.com",
+        "https://www.bing.com",
+        "https://www.wikipedia.org"
+    ],
+    "off_hours_url": "https://duckduckgo.com",
+    "rotation_time_seconds": 15,
+    "on_hours_start": "09:00",
+    "on_hours_end": "17:00"
+}
