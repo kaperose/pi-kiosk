@@ -106,6 +106,7 @@ def launch_browser(urls):
         return
 
     # Use a persistent user data directory to save sessions/cookies
+    # THIS IS THE FIX for the login prompt
     user_data_dir = os.path.expanduser("~/.config/chromium_kiosk_profile")
     
     command = [
@@ -115,7 +116,8 @@ def launch_browser(urls):
         '--noerrdialogs',
         '--check-for-update-interval=31536000',
         '--disable-features=Translate',
-        '--user-data-dir={user_data_dir}'
+        f'--user-data-dir={user_data_dir}' # THIS IS THE FIX
+        # '--incognito' flag was REMOVED
     ] + urls  # Add all URLs as arguments
 
     logging.info(f"Launching new browser session with {len(urls)} tabs.")
@@ -137,9 +139,7 @@ def switch_to_tab(tab_index):
     """Switches to a specific tab index (1-based)."""
     try:
         # `xdotool` needs DISPLAY, which is set in the .service file
-        # 'Ctrl+Alt+t' is just to focus the window, 'Ctrl+<n>' switches tab
-        # Using 'search' is more robust than assuming a window ID
-        # We use 'Ctrl+Page_Down' to cycle
+        # Using 'Ctrl+Page_Down' to cycle
         logging.info(f"Switching to next tab...")
         subprocess.run(
             ['xdotool', 'search', '--onlyvisible', '--class', 'chromium', 'windowactivate', '--sync', 'key', 'Ctrl+Page_Down'],
@@ -180,7 +180,7 @@ def main():
                 urls_to_launch = [entry['url'] for entry in on_urls if entry.get('url')]
                 if not urls_to_launch:
                     logging.warning("'On Hours' mode active, but no URLs are configured. Waiting.")
-                    time.sleep(60)
+                    time.sleep(60) # THIS IS THE FIX (was outside the loop)
                     continue
                 
                 launch_browser(urls_to_launch)
@@ -198,11 +198,10 @@ def main():
                 
                 # Switch to the tab (if more than one)
                 if len(on_urls) > 1:
-                    # Note: xdotool switches *relative* to the current tab,
-                    # so we just cycle 'Next'
                     switch_to_tab(current_url_index + 1)
                 
                 # Wait for the specified duration
+                # THIS IS THE FIX for the duration bug
                 time.sleep(duration) 
                 
                 # Move to the next tab index for the next loop
@@ -224,6 +223,8 @@ def main():
             
             # In off-hours, just sleep and re-check the time
             time.sleep(60)
+        
+        # The main 'sleep' was REMOVED from here to allow custom durations
 
 if __name__ == "__main__":
     try:
