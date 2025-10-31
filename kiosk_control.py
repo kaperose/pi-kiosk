@@ -1,73 +1,75 @@
-#!/usr/bin/env python3
-
-import os
-import time
 import subprocess
+import time
 import json
 import logging
 from datetime import datetime
-import psutil # For process management
+import os
+import psutil
 
 # --- Configuration ---
-# Get the absolute path of the directory where this script is located
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
-# --- NEW: Define a persistent user data directory ---
-# This will be created in your project folder.
-USER_DATA_DIR = os.path.join(BASE_DIR, 'chromium_user_data') 
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
+LOG_FILE = os.path.join(os.path.dirname(__file__), 'kiosk.log')
+# --- End Configuration ---
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# --- Setup Logging ---
+# Clear the log file on each start
+try:
+    with open(LOG_FILE, 'w'):
+        pass
+except IOError:
+    pass
 
-# --- Globals ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ])
+# --- End Setup Logging ---
+
+# --- Global State ---
 browser_process = None
-current_url_list = []
-current_tab_index = 0
+current_url_index = 0
+current_mode = None  # 'ON' or 'OFF'
+# --- End Global State ---
 
-# --- Helper Functions ---
-def read_config():
-    """Reads the config file."""
-    global CONFIG_FILE
-    if not os.path.exists(CONFIG_FILE):
-        logging.warning("Config file not found. Using default values.")
-        return {
-            "on_urls": [{"url": "https://google.com", "duration": 15}],
-            "off_hours_url": "https://duckduckgo.com",
-            "on_hours_start": "08:00",
-            "on_hours_end": "18:00"
-        }
+def load_config():
+    """Loads the configuration from config.json."""
     try:
         with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
+            config = json.load(f)
+        logging.info("Configuration loaded successfully.")
+        return config
     except Exception as e:
-        logging.error(f"Error reading config: {e}")
-        return {}
+        logging.error(f"FATAL: Could not load config file: {e}")
+        return None
 
 def is_on_hours(start_str, end_str):
-    """Checks if the current time is within the 'on' hours."""
+    """Checks if the current time is within the 'on hours'."""
     try:
         now = datetime.now().time()
-        start = datetime.strptime(start_str, '%H:%M').time()
-        end = datetime.strptime(end_str, '%H:%M').time()
+        start_time = datetime.strptime(start_str, '%H:%M').time()
+        end_time = datetime.strptime(end_str, '%H:%M').time()
 
-        if start <= end:
+        if start_time <= end_time:
             # Normal day (e.g., 08:00 to 18:00)
-            return start <= now < end
+            return start_time <= now < end_time
         else:
             # Overnight (e.g., 22:00 to 06:00)
-            return now >= start or now < end
+            return now >= start_time or now < end_time
     except Exception as e:
-        logging.error(f"Error checking time: {e}")
-        return False # Default to off-hours
+        logging.error(f"Error in time check: {e}")
+        return False
 
 def kill_browser():
-    """Finds and forcefully terminates any existing Chromium processes."""
+    """Finds and terminates any existing Chromium process and its children."""
     global browser_process
     
-    # First, try terminating our tracked process
     if browser_process and browser_process.poll() is None:
+        logging.info(f"Terminating existing browser process (PID: {browser_process.pid}).")
         try:
-            # Find all children of the main browser process
+            # Get all children of the main process
             parent = psutil.Process(browser_process.pid)
             children = parent.children(recursive=True)
             
@@ -78,195 +80,158 @@ def kill_browser():
             # Terminate the parent
             parent.terminate()
             
-            # Wait a moment
-            browser_process.wait(timeout=2)
-            logging.info("Browser process terminated.")
-        except (psutil.NoSuchProcess, psutil.TimeoutExpired):
-             # Process already gone or stuck, fall back to kill
-            try:
-                browser_process.kill()
-                logging.info("Browser process killed.")
-            except Exception as e:
-                logging.warning(f"Failed to kill process: {e}")
-        except Exception as e:
-            logging.warning(f"Error terminating process: {e}")
+            # Wait for processes to die
+            gone, alive = psutil.wait_procs([parent] + children, timeout=3)
             
-    browser_process = None
-
-    # As a fallback, hunt for any stray 'chromium' processes
-    # This is more aggressive but ensures a clean state
-    try:
-        for proc in psutil.process_iter(['pid', 'name']):
-            if 'chromium' in proc.info['name'].lower():
-                try:
-                    p = psutil.Process(proc.info['pid'])
-                    p.kill()
-                    logging.info(f"Killed stray Chromium process (PID: {proc.info['pid']})")
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass # Process already gone or not ours
-    except Exception as e:
-        logging.error(f"Error during stray process cleanup: {e}")
-
-
-def launch_browser(urls_to_open):
-    """Launches Chromium with all specified URLs in separate tabs."""
-    global browser_process, USER_DATA_DIR
+            # Force kill any stubborn processes
+            for p in alive:
+                logging.warning(f"Process {p.pid} did not terminate, force killing.")
+                p.kill()
+                
+        except psutil.NoSuchProcess:
+            logging.info(f"Process {browser_process.pid} already gone.")
+        except Exception as e:
+            logging.error(f"Error during process termination: {e}")
     
-    if not urls_to_open:
+    browser_process = None
+    logging.info("Browser process terminated.")
+
+def launch_browser(urls):
+    """Launches Chromium with the specified URLs, one per tab."""
+    global browser_process
+    kill_browser()  # Ensure no old browser is running
+
+    if not urls:
         logging.error("No URLs provided to launch.")
         return
 
-    # Ensure the user data directory exists
-    if not os.path.exists(USER_DATA_DIR):
-        os.makedirs(USER_DATA_DIR)
-        logging.info(f"Created user data directory at: {USER_DATA_DIR}")
-
-    # Define the command to start Chromium
+    # Use a persistent user data directory to save sessions/cookies
+    user_data_dir = os.path.expanduser("~/.config/chromium_kiosk_profile")
+    
     command = [
         'chromium',
-        '--kiosk',          # Kiosk mode
-        '--disable-infobars', # Disable "Chrome is being controlled..."
-        '--noerrdialogs',     # Suppress error dialogs
-        
-        # --- KEY CHANGES ---
-        # 1. REMOVED: '--incognito' (This was deleting your login)
-        # 2. ADDED: '--user-data-dir' (This saves your cookies/session)
-        f'--user-data-dir={USER_DATA_DIR}',
-        
-        '--check-for-update-interval=31536000', # Don't check for updates
-        '--disable-pinch',  # Disable pinch-to-zoom
-        '--start-maximized',# Start maximized
-    ]
-    
-    # Add all URLs to the command. Chromium will open each in a new tab.
-    command.extend(urls_to_open)
+        '--kiosk',
+        '--disable-infobars',
+        '--noerrdialogs',
+        '--check-for-update-interval=31536000',
+        '--disable-features=Translate',
+        f'--user-data-dir={user_data_dir}'
+    ] + urls  # Add all URLs as arguments
 
+    logging.info(f"Launching new browser session with {len(urls)} tabs.")
     try:
-        logging.info(f"Launching Chromium with {len(urls_to_open)} URLs...")
         # Use Popen to launch without blocking
-        browser_process = subprocess.Popen(command, env=os.environ)
-        
-        # Give the browser time to start and open all tabs
-        time.sleep(10) # Increased to 10s for multiple tabs to load
-        
-        # Focus the first tab (Ctrl+1)
-        focus_tab(1)
-        
+        browser_process = subprocess.Popen(
+            command, 
+            env=os.environ.copy(),
+            preexec_fn=os.setsid  # Start in a new session
+        )
+        logging.info(f"Browser launched with PID: {browser_process.pid}")
+        # Give the browser time to open all tabs
+        time.sleep(10) 
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
+        logging.error(f"Failed to launch browser: {e}")
+        browser_process = None
 
-def focus_tab(tab_index):
-    """Uses xdotool to focus a specific browser tab (1-indexed)."""
+def switch_to_tab(tab_index):
+    """Switches to a specific tab index (1-based)."""
     try:
-        # xdotool key 'ctrl+<index>'
-        subprocess.run(['xdotool', 'key', f'ctrl+{tab_index}'], check=True)
+        # `xdotool` needs DISPLAY, which is set in the .service file
+        # 'Ctrl+Alt+t' is just to focus the window, 'Ctrl+<n>' switches tab
+        # Using 'search' is more robust than assuming a window ID
+        # We use 'Ctrl+Page_Down' to cycle
+        logging.info(f"Switching to next tab...")
+        subprocess.run(
+            ['xdotool', 'search', '--onlyvisible', '--class', 'chromium', 'windowactivate', '--sync', 'key', 'Ctrl+Page_Down'],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+    except subprocess.CalledProcessError as e:
+        logging.warning(f"Failed to switch tab: {e.stderr}")
     except Exception as e:
-        logging.error(f"Failed to focus tab {tab_index}: {e}")
-
-def cycle_to_next_tab():
-    """Uses xdotool to cycle to the next tab (Ctrl+Tab)."""
-    try:
-        subprocess.run(['xdotool', 'key', 'ctrl+Tab'], check=True)
-    except Exception as e:
-        logging.error(f"Failed to cycle tabs: {e}")
+        logging.error(f"Error during tab switch: {e}")
 
 # --- Main Kiosk Loop ---
-def main_loop():
-    global current_url_list, current_tab_index, browser_process
-    last_mode = None
-    last_config = None
+def main():
+    global current_mode, current_url_index
 
+    logging.info("--- Kiosk Control Script Started ---")
+    
     while True:
-        try:
-            # 1. Read Config
-            config = read_config()
-            
-            # Check if config is valid
-            if not config.get("on_urls") or not config.get("off_hours_url"):
-                logging.error("Config is invalid or missing keys. Retrying in 30s.")
-                time.sleep(30)
-                continue
+        config = load_config()
+        if not config:
+            logging.error("Retrying config load in 60s...")
+            time.sleep(60)
+            continue
+        
+        on_urls = config.get('on_urls', [])
+        off_url = config.get('off_hours_url')
+        
+        on = is_on_hours(config.get('on_hours_start'), config.get('on_hours_end'))
+        
+        if on:
+            # --- ON HOURS ---
+            if current_mode != 'ON' or browser_process is None or browser_process.poll() is not None:
+                logging.info("Entering 'On Hours' mode.")
+                current_mode = 'ON'
+                current_url_index = 0
                 
-            # 2. Determine Mode (On or Off)
-            is_on = is_on_hours(config["on_hours_start"], config["on_hours_end"])
-            current_mode = "ON" if is_on else "OFF"
-            
-            # 3. Check for Mode or Config Change
-            # If mode changed (e.g., ON->OFF) or config file itself changed,
-            # we must restart the browser with the new URL list.
-            if current_mode != last_mode or config != last_config:
-                logging.info(f"Mode change detected. Entering {current_mode} hours mode.")
-                
-                # Kill any existing browser
-                kill_browser() 
-                
-                # Prepare new URL list
-                if is_on:
-                    current_url_list = config.get("on_urls", [])
-                    urls_to_launch = [entry["url"] for entry in current_url_list]
-                else:
-                    # Off hours, just one URL
-                    current_url_list = [{"url": config["off_hours_url"], "duration": 3600}] # Fake long duration
-                    urls_to_launch = [config["off_hours_url"]]
-                
-                # Reset tab index and launch new browser
-                current_tab_index = 0
-                if urls_to_launch:
-                    launch_browser(urls_to_launch)
-                else:
-                    logging.error("No URLs to launch for current mode.")
-
-                last_mode = current_mode
-                last_config = config
-                
-                # After launching, no need to sleep, just continue to next loop iteration
-                # to get the duration for the first tab
-                continue 
-            
-            # 4. Handle Tab Rotation (if in ON-hours)
-            if is_on and current_url_list:
-                # Ensure browser is still running. If not, the loop will restart it.
-                if browser_process is None or browser_process.poll() is not None:
-                    logging.warning("Browser process not running. Forcing restart.")
-                    last_mode = None # Force a full restart on next loop
-                    time.sleep(5)
+                urls_to_launch = [entry['url'] for entry in on_urls if entry.get('url')]
+                if not urls_to_launch:
+                    logging.warning("'On Hours' mode active, but no URLs are configured. Waiting.")
+                    time.sleep(60)
                     continue
-
-                # Get current tab's info
-                current_tab_info = current_url_list[current_tab_index]
-                duration = current_tab_info.get("duration", 15)
                 
-                logging.info(f"Displaying Tab {current_tab_index + 1} ({current_tab_info['url']}) for {duration}s")
+                launch_browser(urls_to_launch)
+            
+            # --- Tab Switching Logic ---
+            if on_urls and len(on_urls) > 0:
+                if current_url_index >= len(on_urls):
+                    current_url_index = 0 # Loop back to the start
+                
+                # Get the duration for the current tab
+                current_entry = on_urls[current_url_index]
+                duration = current_entry.get('duration', 60)
+                
+                logging.info(f"Displaying tab {current_url_index + 1} ({current_entry.get('notes', 'No notes')}) for {duration}s")
+                
+                # Switch to the tab (if more than one)
+                if len(on_urls) > 1:
+                    # Note: xdotool switches *relative* to the current tab,
+                    # so we just cycle 'Next'
+                    switch_to_tab(current_url_index + 1)
                 
                 # Wait for the specified duration
-                time.sleep(duration)
+                time.sleep(duration) 
                 
-                # Move to the next tab
-                current_tab_index = (current_tab_index + 1) % len(current_url_list)
-                
-                # Focus the next tab. xdotool is 1-indexed.
-                focus_tab(current_tab_index + 1)
-
+                # Move to the next tab index for the next loop
+                current_url_index += 1
             else:
-                # We are in OFF-hours, just sleep for a while.
-                # The browser is already on the correct single page.
-                logging.info("In Off-Hours mode. Checking again in 60s.")
+                # No URLs, just wait
                 time.sleep(60)
 
-        except KeyboardInterrupt:
-            logging.info("Kiosk script stopped by user.")
-            kill_browser()
-            break
-        except Exception as e:
-            logging.error(f"Unhandled error in main loop: {e}. Restarting loop in 15s.")
-            kill_browser()
-            last_mode = None # Force full restart
-            time.sleep(15)
+        else:
+            # --- OFF HOURS ---
+            if current_mode != 'OFF' or browser_process is None or browser_process.poll() is not None:
+                logging.info("Entering 'Off Hours' mode.")
+                current_mode = 'OFF'
+                if not off_url:
+                    logging.warning("'Off Hours' mode active, but no off-hours URL is configured. Killing browser.")
+                    kill_browser()
+                else:
+                    launch_browser([off_url])
+            
+            # In off-hours, just sleep and re-check the time
+            time.sleep(60)
 
 if __name__ == "__main__":
-    logging.info("Starting Kiosk Control Script...")
-    # Clean up any old processes before starting
-    kill_browser() 
-    time.sleep(1) # Short pause
-    main_loop()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logging.info("Script stopped by user (KeyboardInterrupt).")
+        kill_browser()
+    except Exception as e:
+        logging.error(f"--- UNHANDLED EXCEPTION: {e} ---")
+        kill_browser()
 
