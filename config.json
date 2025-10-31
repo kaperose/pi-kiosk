@@ -1,11 +1,18 @@
 {
     "on_urls": [
-        "https://www.google.com",
-        "https://www.bing.com",
-        "https://www.wikipedia.org"
+        {
+            "url": "https://www.google.com",
+            "duration": 60,
+            "notes": "Google Search"
+        },
+        {
+            "url": "https://www.bing.com",
+            "duration": 30,
+            "notes": "Bing Search"
+        }
     ],
     "off_hours_url": "https://duckduckgo.com",
-    "rotation_time_seconds": 15,
-    "on_hours_start": "09:00",
-    "on_hours_end": "17:00"
+    "on_hours_start": "08:00",
+    "on_hours_end": "18:00"
 }
+
