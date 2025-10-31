@@ -112,7 +112,7 @@ def launch_browser(urls):
     
     command = [
         'chromium',
-        #S'--kiosk',
+        '--kiosk',
         '--disable-infobars',
         '--noerrdialogs',
         '--check-for-update-interval=31536000',
