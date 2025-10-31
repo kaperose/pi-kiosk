@@ -105,9 +105,10 @@ def launch_browser(urls):
         logging.error("No URLs provided to launch.")
         return
 
-    # Use a persistent user data directory to save sessions/cookies
-    # THIS IS THE FIX for the login prompt
-    user_data_dir = os.path.expanduser("~/.config/chromium_kiosk_profile")
+    # --- THIS IS THE FIX ---
+    # Use the DEFAULT chromium user profile, which has the login cookies
+    user_data_dir = os.path.expanduser("~/.config/chromium")
+    # --- END FIX ---
     
     command = [
         'chromium',
@@ -116,7 +117,7 @@ def launch_browser(urls):
         '--noerrdialogs',
         '--check-for-update-interval=31536000',
         '--disable-features=Translate',
-        f'--user-data-dir={user_data_dir}' # THIS IS THE FIX
+        f'--user-data-dir={user_data_dir}' # Use the default profile
         # '--incognito' flag was REMOVED
     ] + urls  # Add all URLs as arguments
 
