@@ -115,7 +115,7 @@ def launch_browser(urls):
         '--noerrdialogs',
         '--check-for-update-interval=31536000',
         '--disable-features=Translate',
-        f'--user-data-dir={user_data_dir}'
+        '--user-data-dir={user_data_dir}'
     ] + urls  # Add all URLs as arguments
 
     logging.info(f"Launching new browser session with {len(urls)} tabs.")
