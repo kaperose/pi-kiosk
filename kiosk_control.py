@@ -32,6 +32,7 @@ logging.basicConfig(
 browser_process = None
 current_url_index = 0
 current_mode = None  # 'ON' or 'OFF'
+url_refresh_times = {} # Dictionary to store last refresh time for each URL
 # --- End Global State ---
 
 def load_config():
@@ -105,19 +106,20 @@ def launch_browser(urls):
         logging.error("No URLs provided to launch.")
         return
 
-    # --- FIX: Use DEFAULT profile (fixes login prompt issue) ---
+    # Use the DEFAULT chromium user profile, which has the login cookies
+    # This fixes the login prompt issue.
     user_data_dir = os.path.expanduser("~/.config/chromium")
     
     command = [
         'chromium',
         '--kiosk',
-        '--no-first-run',               # Skip first-run wizards
-        '--no-default-browser-check',   # Skip default browser check
+        '--no-first-run',
+        '--no-default-browser-check',
         '--disable-infobars',
         '--noerrdialogs',
         '--check-for-update-interval=31536000',
         '--disable-features=Translate',
-        # --- FIX: Force Fullscreen & Resolution (fixes "Small Window") ---
+        # Force resolution and fullscreen to prevent "Small Window" issue
         '--window-size=1920,1080',
         '--start-fullscreen',
         f'--user-data-dir={user_data_dir}' 
@@ -138,6 +140,11 @@ def launch_browser(urls):
         # Ensure first tab is focused
         focus_tab(1)
         
+        # Initialize refresh times for all URLs
+        current_time = time.time()
+        for url in urls:
+             url_refresh_times[url] = current_time
+
     except Exception as e:
         logging.error(f"Failed to launch browser: {e}")
         browser_process = None
@@ -145,12 +152,9 @@ def launch_browser(urls):
 def focus_tab(tab_index):
     """Focuses a specific tab using xdotool key shortcuts (Ctrl+1..9)."""
     try:
-        # Chromium supports Ctrl+1 through Ctrl+8 directly.
         if tab_index <= 8:
             key = f"ctrl+{tab_index}"
         else:
-            # For >8 tabs, this simple method fails, but user likely has fewer.
-            # We'll just log a warning if >8.
             logging.warning(f"Cannot focus tab {tab_index} directly (max 8).")
             return
 
@@ -168,7 +172,7 @@ def cycle_next_tab():
 def refresh_page():
     """Refreshes the current page using Ctrl+R."""
     try:
-        # --- FIX: Force Reload (fixes "Stale Data") ---
+        # Forces a page reload to prevent stale data
         subprocess.run(['xdotool', 'key', 'ctrl+r'], check=False)
         logging.info("Page refreshed.")
     except Exception as e:
@@ -176,10 +180,16 @@ def refresh_page():
 
 # --- Main Kiosk Loop ---
 def main():
-    global current_mode, current_url_index
+    global current_mode, current_url_index, url_refresh_times
 
     logging.info("--- Kiosk Control Script Started ---")
     
+    # Initial delay to let the desktop environment settle
+    time.sleep(5)
+    
+    # Default refresh interval: 1 hour (3600 seconds)
+    REFRESH_INTERVAL = 3600 
+
     while True:
         config = load_config()
         if not config:
@@ -194,7 +204,6 @@ def main():
         
         if on:
             # --- ON HOURS ---
-            # Launch if not running or if we just switched modes
             if current_mode != 'ON' or browser_process is None or browser_process.poll() is not None:
                 logging.info("Entering 'On Hours' mode.")
                 current_mode = 'ON'
@@ -215,16 +224,24 @@ def main():
                 
                 # Get the duration for the current tab
                 current_entry = on_urls[current_url_index]
+                current_url = current_entry.get('url')
                 duration = current_entry.get('duration', 60)
                 
                 logging.info(f"Displaying tab {current_url_index + 1} ({current_entry.get('notes', 'No notes')}) for {duration}s")
 
-                # 1. Refresh the page (Fixes "Stale Data")
-                # We wait a tiny bit to ensure window focus, then refresh
-                time.sleep(0.5)
-                refresh_page()
+                # 1. Check if refresh is needed (once per hour)
+                current_time = time.time()
+                last_refreshed = url_refresh_times.get(current_url, 0)
+                
+                if current_time - last_refreshed > REFRESH_INTERVAL:
+                    logging.info(f"Refreshing tab {current_url_index + 1} (Last refreshed > 1h ago)")
+                    time.sleep(0.5) # Wait for focus
+                    refresh_page()
+                    url_refresh_times[current_url] = current_time # Update timestamp
+                else:
+                    logging.info(f"Skipping refresh for tab {current_url_index + 1} (Refreshed {int(current_time - last_refreshed)}s ago)")
 
-                # 2. Wait for the specified duration (allowing page to load and be viewed)
+                # 2. Wait for the specified duration
                 time.sleep(duration) 
                 
                 # 3. Switch to the NEXT tab (if more than one)
