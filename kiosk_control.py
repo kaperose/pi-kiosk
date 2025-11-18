@@ -105,21 +105,23 @@ def launch_browser(urls):
         logging.error("No URLs provided to launch.")
         return
 
-    # --- THIS IS THE FIX ---
-    # Use the DEFAULT chromium user profile, which has the login cookies
+    # --- FIX: Use DEFAULT profile (fixes login prompt issue) ---
     user_data_dir = os.path.expanduser("~/.config/chromium")
-    # --- END FIX ---
     
     command = [
         'chromium',
         '--kiosk',
+        '--no-first-run',               # Skip first-run wizards
+        '--no-default-browser-check',   # Skip default browser check
         '--disable-infobars',
         '--noerrdialogs',
         '--check-for-update-interval=31536000',
         '--disable-features=Translate',
-        f'--user-data-dir={user_data_dir}' # Use the default profile
-        # '--incognito' flag was REMOVED
-    ] + urls  # Add all URLs as arguments
+        # --- FIX: Force Fullscreen & Resolution (fixes "Small Window") ---
+        '--window-size=1920,1080',
+        '--start-fullscreen',
+        f'--user-data-dir={user_data_dir}' 
+    ] + urls
 
     logging.info(f"Launching new browser session with {len(urls)} tabs.")
     try:
@@ -130,28 +132,47 @@ def launch_browser(urls):
             preexec_fn=os.setsid  # Start in a new session
         )
         logging.info(f"Browser launched with PID: {browser_process.pid}")
-        # Give the browser time to open all tabs
-        time.sleep(10) 
+        # Give the browser plenty of time to open all tabs
+        time.sleep(15) 
+        
+        # Ensure first tab is focused
+        focus_tab(1)
+        
     except Exception as e:
         logging.error(f"Failed to launch browser: {e}")
         browser_process = None
 
-def switch_to_tab(tab_index):
-    """Switches to a specific tab index (1-based)."""
+def focus_tab(tab_index):
+    """Focuses a specific tab using xdotool key shortcuts (Ctrl+1..9)."""
     try:
-        # `xdotool` needs DISPLAY, which is set in the .service file
-        # Using 'Ctrl+Page_Down' to cycle
-        logging.info(f"Switching to next tab...")
-        subprocess.run(
-            ['xdotool', 'search', '--onlyvisible', '--class', 'chromium', 'windowactivate', '--sync', 'key', 'Ctrl+Page_Down'],
-            check=True,
-            capture_output=True,
-            text=True
-        )
-    except subprocess.CalledProcessError as e:
-        logging.warning(f"Failed to switch tab: {e.stderr}")
+        # Chromium supports Ctrl+1 through Ctrl+8 directly.
+        if tab_index <= 8:
+            key = f"ctrl+{tab_index}"
+        else:
+            # For >8 tabs, this simple method fails, but user likely has fewer.
+            # We'll just log a warning if >8.
+            logging.warning(f"Cannot focus tab {tab_index} directly (max 8).")
+            return
+
+        subprocess.run(['xdotool', 'key', key], check=False)
     except Exception as e:
-        logging.error(f"Error during tab switch: {e}")
+        logging.error(f"Error focusing tab {tab_index}: {e}")
+
+def cycle_next_tab():
+    """Cycles to the next tab using Ctrl+Tab."""
+    try:
+        subprocess.run(['xdotool', 'key', 'ctrl+Tab'], check=False)
+    except Exception as e:
+        logging.error(f"Error cycling tab: {e}")
+
+def refresh_page():
+    """Refreshes the current page using Ctrl+R."""
+    try:
+        # --- FIX: Force Reload (fixes "Stale Data") ---
+        subprocess.run(['xdotool', 'key', 'ctrl+r'], check=False)
+        logging.info("Page refreshed.")
+    except Exception as e:
+        logging.error(f"Error refreshing page: {e}")
 
 # --- Main Kiosk Loop ---
 def main():
@@ -173,6 +194,7 @@ def main():
         
         if on:
             # --- ON HOURS ---
+            # Launch if not running or if we just switched modes
             if current_mode != 'ON' or browser_process is None or browser_process.poll() is not None:
                 logging.info("Entering 'On Hours' mode.")
                 current_mode = 'ON'
@@ -181,12 +203,12 @@ def main():
                 urls_to_launch = [entry['url'] for entry in on_urls if entry.get('url')]
                 if not urls_to_launch:
                     logging.warning("'On Hours' mode active, but no URLs are configured. Waiting.")
-                    time.sleep(60) # THIS IS THE FIX (was outside the loop)
+                    time.sleep(60)
                     continue
                 
                 launch_browser(urls_to_launch)
             
-            # --- Tab Switching Logic ---
+            # --- Tab Switching & Refreshing Logic ---
             if on_urls and len(on_urls) > 0:
                 if current_url_index >= len(on_urls):
                     current_url_index = 0 # Loop back to the start
@@ -196,16 +218,20 @@ def main():
                 duration = current_entry.get('duration', 60)
                 
                 logging.info(f"Displaying tab {current_url_index + 1} ({current_entry.get('notes', 'No notes')}) for {duration}s")
-                
-                # Switch to the tab (if more than one)
-                if len(on_urls) > 1:
-                    switch_to_tab(current_url_index + 1)
-                
-                # Wait for the specified duration
-                # THIS IS THE FIX for the duration bug
+
+                # 1. Refresh the page (Fixes "Stale Data")
+                # We wait a tiny bit to ensure window focus, then refresh
+                time.sleep(0.5)
+                refresh_page()
+
+                # 2. Wait for the specified duration (allowing page to load and be viewed)
                 time.sleep(duration) 
                 
-                # Move to the next tab index for the next loop
+                # 3. Switch to the NEXT tab (if more than one)
+                if len(on_urls) > 1:
+                    cycle_next_tab()
+                
+                # 4. Increment index for next loop iteration
                 current_url_index += 1
             else:
                 # No URLs, just wait
@@ -224,8 +250,6 @@ def main():
             
             # In off-hours, just sleep and re-check the time
             time.sleep(60)
-        
-        # The main 'sleep' was REMOVED from here to allow custom durations
 
 if __name__ == "__main__":
     try:
@@ -236,4 +260,3 @@ if __name__ == "__main__":
     except Exception as e:
         logging.error(f"--- UNHANDLED EXCEPTION: {e} ---")
         kill_browser()
-
