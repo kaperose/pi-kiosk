@@ -215,37 +215,31 @@ def main():
                 
                 logging.info(f"Wyświetlanie karty {current_url_index + 1} ({current_entry.get('notes', 'Brak notatek')}) przez {duration}s")
 
-                # Jeśli to PIERWSZA wizyta na tej karcie w tej sesji,
-                # musimy uruchomić logikę czyszczenia, aby zamknąć popupy.
-                is_first_visit = current_url_index not in tabs_initialized
+                # Zawsze wykonuj close_popup po przełączeniu na kartę
+                # Daje to pewność, że jeśli popup pojawił się w tle, zostanie zamknięty teraz
+                time.sleep(2) # Poczekaj chwilę po przełączeniu, aby karta stała się aktywna
+                close_popup()
 
                 # Sprawdź logikę odświeżania (uruchom przy starcie LUB co godzinę)
                 current_time = time.time()
                 last_refreshed = url_refresh_times.get(current_url, 0)
                 needs_refresh = (current_time - last_refreshed > REFRESH_INTERVAL)
                 
-                if needs_refresh or is_first_visit:
-                    logging.info(f"Wykonywanie konserwacji na karcie {current_url_index + 1} (Odświeżanie/Inicjalizacja + Zamknięcie popupu)")
+                if needs_refresh:
+                    logging.info(f"Odświeżanie karty {current_url_index + 1}...")
                     
-                    # Zapewnij fokus okna
-                    time.sleep(0.5)
+                    # Odśwież, aby pobrać najnowsze dane
+                    refresh_page()
+                    url_refresh_times[current_url] = current_time
                     
-                    if needs_refresh:
-                        # Odśwież, aby pobrać najnowsze dane
-                        refresh_page()
-                        url_refresh_times[current_url] = current_time
-                    
-                    # Poczekaj na załadowanie, a następnie zamknij popup
-                    # Działa to przy PIERWSZEJ wizycie (inicjalizacja karty) i co godzinę po (odświeżenie)
+                    # Po odświeżeniu również spróbuj zamknąć popup
                     time.sleep(5) 
                     close_popup()
-                    
-                    # Oznacz jako zainicjalizowane
-                    tabs_initialized.add(current_url_index)
                 else:
                     logging.info(f"Pominięcie odświeżania (Odświeżono {int(current_time - last_refreshed)}s temu)")
                 
                 # 2. Czekaj przez określony czas
+                # (Odejmujemy czas poświęcony na obsługę popupów, aby zachować płynność, ale tutaj po prostu czekamy)
                 time.sleep(duration) 
                 
                 # 3. Przełącz kartę (jeśli jest więcej niż jedna)
