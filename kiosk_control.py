@@ -32,6 +32,7 @@ browser_process = None
 current_url_index = 0
 current_mode = None  # 'ON' or 'OFF'
 url_refresh_times = {} # Stores timestamp of last refresh for each URL
+tabs_initialized = set() # NEW: Tracks which tabs have had initial popup cleanup
 # --- End Global State ---
 
 def load_config():
@@ -96,7 +97,7 @@ def close_popup():
 
 def launch_browser(urls):
     """Launches Chromium with the specified URLs."""
-    global browser_process, url_refresh_times
+    global browser_process, url_refresh_times, tabs_initialized
     kill_browser()
 
     if not urls:
@@ -130,8 +131,9 @@ def launch_browser(urls):
         
         time.sleep(15) 
         
-        # Reset refresh times to 0 so the main loop triggers a refresh/ESC immediately for ALL tabs
+        # Reset state
         url_refresh_times = {}
+        tabs_initialized = set() # Reset initialization tracking
         
         # We handle the first tab popup in the main loop logic now
         
@@ -167,7 +169,7 @@ def refresh_page():
 
 # --- Main Kiosk Loop ---
 def main():
-    global current_mode, current_url_index, url_refresh_times
+    global current_mode, current_url_index, url_refresh_times, tabs_initialized
 
     logging.info("--- Kiosk Control Script Started ---")
     time.sleep(5)
@@ -213,45 +215,37 @@ def main():
                 
                 logging.info(f"Displaying tab {current_url_index + 1} ({current_entry.get('notes', 'No notes')}) for {duration}s")
 
-                # If we just launched, we need to make sure we are focused on the correct tab
-                # because launch_browser no longer forces tab 1 focus immediately.
-                # However, browser starts on tab 1.
-                # If we cycle, we are fine.
-                # To be robust for the "first run" or "refresh" logic:
-                
+                # If this is the FIRST time we are visiting this tab in this session,
+                # we must run the cleanup logic to close popups.
+                is_first_visit = current_url_index not in tabs_initialized
+
                 # Check refresh logic (Run at start OR every hour)
                 current_time = time.time()
                 last_refreshed = url_refresh_times.get(current_url, 0)
+                needs_refresh = (current_time - last_refreshed > REFRESH_INTERVAL)
                 
-                if current_time - last_refreshed > REFRESH_INTERVAL:
-                    logging.info(f"Performing maintenance on tab {current_url_index + 1} (Refresh + Close Popup)")
+                if needs_refresh or is_first_visit:
+                    logging.info(f"Performing maintenance on tab {current_url_index + 1} (Refresh/Init + Close Popup)")
                     
                     # Ensure window focus
                     time.sleep(0.5)
                     
-                    # We might need to explicitly focus the tab if it's not the first one or cycling didn't align perfectly yet (rare but possible on start)
-                    # But assuming cycle_next_tab works, we are on the right tab.
-                    
-                    # Refresh to get latest data
-                    refresh_page()
+                    if needs_refresh:
+                        # Refresh to get latest data
+                        refresh_page()
+                        url_refresh_times[current_url] = current_time
                     
                     # Wait for load, then kill popup
-                    # This runs on the FIRST visit and every hour after
-                    time.sleep(5) # Increased wait time for slow PowerBI load
+                    # This runs on the FIRST visit (tab initialization) and every hour after (refresh)
+                    time.sleep(5) 
                     close_popup()
                     
-                    # Update timestamp
-                    url_refresh_times[current_url] = current_time
+                    # Mark as initialized
+                    tabs_initialized.add(current_url_index)
                 else:
-                    # Even if not refreshing, try closing popup just in case it appeared late
-                    # This is lightweight enough to do every time
-                    time.sleep(2)
-                    close_popup()
                     logging.info(f"Skipping refresh (Refreshed {int(current_time - last_refreshed)}s ago)")
                 
                 # 2. Wait for the specified duration
-                # Deduct time spent on maintenance logic to keep overall timing roughly accurate
-                # or just wait full duration. Waiting full duration is safer.
                 time.sleep(duration) 
                 
                 # 3. Switch tab (if more than one)
