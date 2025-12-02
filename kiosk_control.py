@@ -31,58 +31,22 @@ logging.basicConfig(
 browser_process = None
 current_url_index = 0
 current_mode = None  # 'ON' or 'OFF'
-url_refresh_times = {}
+url_refresh_times = {} # Stores timestamp of last refresh for each URL
 # --- End Global State ---
 
-
-# -------------------------
-# AUTO-CLICK "SIGN IN"
-# -------------------------
-def auto_click_sign_in():
-    """
-    Automatically clicks the Dynamics popup: "Sign in".
-    It appears every ~24h when Dynamics refreshes token.
-    """
-    try:
-        # Step 1: detect popup window
-        result = subprocess.run(
-            'xdotool search --name "Sign in"',
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-
-        if result.stdout:
-            logging.info("Sign-in popup detected → clicking Enter")
-            # Step 2: press Enter (activates the "Sign in" button)
-            subprocess.run(
-                'xdotool key Return',
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-
-    except Exception as e:
-        logging.error(f"auto_click_sign_in() error: {e}")
-
-
-# -------------------------
-# CONFIGURATION LOADING
-# -------------------------
 def load_config():
+    """Loads the configuration from config.json."""
     try:
         with open(CONFIG_FILE, 'r') as f:
             config = json.load(f)
+        logging.info("Configuration loaded successfully.")
         return config
     except Exception as e:
         logging.error(f"FATAL: Could not load config file: {e}")
         return None
 
-
-# -------------------------
-# TIME HELPER
-# -------------------------
 def is_on_hours(start_str, end_str):
+    """Checks if the current time is within the 'on hours'."""
     try:
         now = datetime.now().time()
         start_time = datetime.strptime(start_str, '%H:%M').time()
@@ -96,48 +60,51 @@ def is_on_hours(start_str, end_str):
         logging.error(f"Error in time check: {e}")
         return False
 
-
-# -------------------------
-# BROWSER PROCESS CONTROL
-# -------------------------
 def kill_browser():
+    """Finds and terminates any existing Chromium process."""
     global browser_process
-
+    
     if browser_process and browser_process.poll() is None:
-        logging.info(f"Terminating browser process (PID: {browser_process.pid}).")
+        logging.info(f"Terminating existing browser process (PID: {browser_process.pid}).")
         try:
             parent = psutil.Process(browser_process.pid)
             children = parent.children(recursive=True)
-
             for child in children:
                 child.terminate()
-
             parent.terminate()
-
             gone, alive = psutil.wait_procs([parent] + children, timeout=3)
-
             for p in alive:
-                logging.warning(f"Force-killing PID {p.pid}")
                 p.kill()
-
         except psutil.NoSuchProcess:
-            pass
+            logging.info(f"Process {browser_process.pid} already gone.")
         except Exception as e:
-            logging.error(f"Error during browser termination: {e}")
-
+            logging.error(f"Error during process termination: {e}")
+    
     browser_process = None
+    logging.info("Browser process terminated.")
 
+def close_popup():
+    """Simulates pressing ESC to close annoying popups like PowerBI login."""
+    try:
+        logging.info("Sending ESC to close potential popups...")
+        subprocess.run(
+            ['xdotool', 'search', '--onlyvisible', '--class', 'chromium', 'windowactivate', '--sync', 'key', 'Escape', 'sleep', '0.5', 'key', 'Escape'],
+            check=False
+        )
+    except Exception as e:
+        logging.error(f"Error sending ESC: {e}")
 
 def launch_browser(urls):
+    """Launches Chromium with the specified URLs."""
     global browser_process, url_refresh_times
     kill_browser()
 
     if not urls:
-        logging.error("No URLs configured.")
+        logging.error("No URLs provided to launch.")
         return
 
     user_data_dir = os.path.expanduser("~/.config/chromium")
-
+    
     command = [
         'chromium',
         '--kiosk',
@@ -149,149 +116,159 @@ def launch_browser(urls):
         '--disable-features=Translate',
         '--window-size=1920,1080',
         '--start-fullscreen',
-        f'--user-data-dir={user_data_dir}'
+        f'--user-data-dir={user_data_dir}' 
     ] + urls
 
-    logging.info(f"Launching Chromium with {len(urls)} tabs.")
-
+    logging.info(f"Launching new browser session with {len(urls)} tabs.")
     try:
         browser_process = subprocess.Popen(
-            command,
+            command, 
             env=os.environ.copy(),
             preexec_fn=os.setsid
         )
-        logging.info(f"Browser PID: {browser_process.pid}")
-        time.sleep(15)
-
+        logging.info(f"Browser launched with PID: {browser_process.pid}")
+        
+        time.sleep(15) 
+        
+        # We DO NOT clear popups here anymore.
+        # We let the main loop handle it per-tab to ensure every tab gets treated.
         focus_tab(1)
-        now = time.time()
-
-        for url in urls:
-            url_refresh_times[url] = now
-
+        
+        # Reset refresh times to 0 so the main loop triggers a refresh/ESC immediately for ALL tabs
+        url_refresh_times = {}
+        
     except Exception as e:
-        logging.error(f"Failed to launch Chromium: {e}")
-
+        logging.error(f"Failed to launch browser: {e}")
+        browser_process = None
 
 def focus_tab(tab_index):
+    """Focuses a specific tab."""
     try:
-        if 1 <= tab_index <= 8:
-            subprocess.run(['xdotool', 'key', f'ctrl+{tab_index}'], check=False)
+        if tab_index <= 8:
+            key = f"ctrl+{tab_index}"
+        else:
+            return
+        subprocess.run(['xdotool', 'key', key], check=False)
     except Exception as e:
-        logging.error(f"Error focusing tab: {e}")
-
+        logging.error(f"Error focusing tab {tab_index}: {e}")
 
 def cycle_next_tab():
+    """Cycles to the next tab."""
     try:
         subprocess.run(['xdotool', 'key', 'ctrl+Tab'], check=False)
     except Exception as e:
         logging.error(f"Error cycling tab: {e}")
 
-
 def refresh_page():
+    """Refreshes the current page."""
     try:
         subprocess.run(['xdotool', 'key', 'ctrl+r'], check=False)
         logging.info("Page refreshed.")
     except Exception as e:
         logging.error(f"Error refreshing page: {e}")
 
-
-# -------------------------
-# MAIN LOOP
-# -------------------------
+# --- Main Kiosk Loop ---
 def main():
     global current_mode, current_url_index, url_refresh_times
 
     logging.info("--- Kiosk Control Script Started ---")
     time.sleep(5)
-
-    REFRESH_INTERVAL = 3600  # refresh each tab every 1 hour
+    
+    # Refresh interval: 1 hour (3600 seconds)
+    REFRESH_INTERVAL = 3600 
 
     while True:
-
-        # 🔥 ALWAYS check and auto-click popup
-        auto_click_sign_in()
-
         config = load_config()
         if not config:
             logging.error("Retrying config load in 60s...")
             time.sleep(60)
             continue
-
+        
         on_urls = config.get('on_urls', [])
         off_url = config.get('off_hours_url')
+        
         on = is_on_hours(config.get('on_hours_start'), config.get('on_hours_end'))
-
-        # ---------------------
-        # ON HOURS
-        # ---------------------
+        
         if on:
-
+            # --- ON HOURS ---
             if current_mode != 'ON' or browser_process is None or browser_process.poll() is not None:
-                logging.info("Entering ON mode")
+                logging.info("Entering 'On Hours' mode.")
                 current_mode = 'ON'
                 current_url_index = 0
-
+                
                 urls_to_launch = [entry['url'] for entry in on_urls if entry.get('url')]
-
                 if not urls_to_launch:
-                    logging.warning("ON mode active but no URLs. Waiting.")
+                    logging.warning("'On Hours' mode active, but no URLs configured.")
                     time.sleep(60)
                     continue
-
+                
                 launch_browser(urls_to_launch)
-
-            if on_urls:
+            
+            # --- Tab Switching & Refreshing ---
+            if on_urls and len(on_urls) > 0:
                 if current_url_index >= len(on_urls):
                     current_url_index = 0
+                
+                current_entry = on_urls[current_url_index]
+                current_url = current_entry.get('url')
+                duration = current_entry.get('duration', 60)
+                
+                logging.info(f"Displaying tab {current_url_index + 1} ({current_entry.get('notes', 'No notes')}) for {duration}s")
 
-                entry = on_urls[current_url_index]
-                url = entry.get('url')
-                duration = entry.get('duration', 60)
-
-                logging.info(f"Tab {current_url_index + 1} => {entry.get('notes', 'No notes')} for {duration}s")
-
-                now = time.time()
-                last_refresh = url_refresh_times.get(url, 0)
-
-                if now - last_refresh > REFRESH_INTERVAL:
-                    logging.info(f"Refreshing tab {current_url_index + 1}")
+                # 1. Refresh & Cleanup Logic
+                # We check if this specific URL needs maintenance (at start OR every hour)
+                current_time = time.time()
+                last_refreshed = url_refresh_times.get(current_url, 0)
+                
+                if current_time - last_refreshed > REFRESH_INTERVAL:
+                    logging.info(f"performing maintenance on tab {current_url_index + 1} (Refresh + Close Popup)")
+                    
+                    # Ensure window focus
+                    time.sleep(0.5)
+                    
+                    # Refresh to get latest data
                     refresh_page()
-                    url_refresh_times[url] = now
-
-                time.sleep(duration)
-
+                    
+                    # Wait for load, then kill popup
+                    # This runs on the FIRST visit and every hour after
+                    time.sleep(3) 
+                    close_popup()
+                    
+                    # Update timestamp
+                    url_refresh_times[current_url] = current_time
+                else:
+                    logging.info(f"Skipping refresh (Refreshed {int(current_time - last_refreshed)}s ago)")
+                
+                # 2. Wait for the specified duration
+                time.sleep(duration) 
+                
+                # 3. Switch tab (if more than one)
                 if len(on_urls) > 1:
                     cycle_next_tab()
-
+                
                 current_url_index += 1
-
             else:
                 time.sleep(60)
 
-        # ---------------------
-        # OFF HOURS
-        # ---------------------
         else:
+            # --- OFF HOURS ---
             if current_mode != 'OFF' or browser_process is None or browser_process.poll() is not None:
-                logging.info("Entering OFF mode")
+                logging.info("Entering 'Off Hours' mode.")
                 current_mode = 'OFF'
-
                 if not off_url:
-                    logging.warning("No off-hours URL → killing browser")
+                    logging.warning("No off-hours URL configured.")
                     kill_browser()
                 else:
                     launch_browser([off_url])
-
+            
             time.sleep(60)
-
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        logging.info("Script stopped manually.")
+        logging.info("Script stopped by user.")
         kill_browser()
     except Exception as e:
-        logging.error(f"UNHANDLED EXCEPTION: {e}")
+        logging.error(f"--- UNHANDLED EXCEPTION: {e} ---")
         kill_browser()
