@@ -6,12 +6,12 @@ from datetime import datetime
 import os
 import psutil
 
-# --- Konfiguracja ---
+# --- Configuration ---
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kiosk.log')
-# --- Koniec konfiguracji ---
+# --- End Configuration ---
 
-# --- Ustawienia logowania ---
+# --- Setup Logging ---
 try:
     with open(LOG_FILE, 'w'):
         pass
@@ -25,29 +25,29 @@ logging.basicConfig(
         logging.FileHandler(LOG_FILE),
         logging.StreamHandler()
     ])
-# --- Koniec ustawień logowania ---
+# --- End Setup Logging ---
 
-# --- Stan globalny ---
+# --- Global State ---
 browser_process = None
 current_url_index = 0
-current_mode = None  # 'ON' lub 'OFF'
-url_refresh_times = {} # Przechowuje znacznik czasu ostatniego odświeżenia dla każdego adresu URL
-tabs_initialized = set() # Śledzi, które karty miały wykonane wstępne czyszczenie popupów
-# --- Koniec stanu globalnego ---
+current_mode = None  # 'ON' or 'OFF'
+url_refresh_times = {} # Stores timestamp of last refresh for each URL
+tabs_initialized = set() # Tracks which tabs have had initial popup cleanup
+# --- End Global State ---
 
 def load_config():
-    """Wczytuje konfigurację z pliku config.json."""
+    """Loads the configuration from config.json."""
     try:
         with open(CONFIG_FILE, 'r') as f:
             config = json.load(f)
-        logging.info("Konfiguracja wczytana pomyślnie.")
+        logging.info("Configuration loaded successfully.")
         return config
     except Exception as e:
-        logging.error(f"FATALNIE: Nie można wczytać pliku konfiguracyjnego: {e}")
+        logging.error(f"FATAL: Could not load config file: {e}")
         return None
 
 def is_on_hours(start_str, end_str):
-    """Sprawdza, czy bieżący czas mieści się w godzinach 'włączenia'."""
+    """Checks if the current time is within the 'on hours'."""
     try:
         now = datetime.now().time()
         start_time = datetime.strptime(start_str, '%H:%M').time()
@@ -58,15 +58,15 @@ def is_on_hours(start_str, end_str):
         else:
             return now >= start_time or now < end_time
     except Exception as e:
-        logging.error(f"Błąd podczas sprawdzania czasu: {e}")
+        logging.error(f"Error in time check: {e}")
         return False
 
 def kill_browser():
-    """Znajduje i kończy wszelkie istniejące procesy Chromium."""
+    """Finds and terminates any existing Chromium process."""
     global browser_process
     
     if browser_process and browser_process.poll() is None:
-        logging.info(f"Kończenie istniejącego procesu przeglądarki (PID: {browser_process.pid}).")
+        logging.info(f"Terminating existing browser process (PID: {browser_process.pid}).")
         try:
             parent = psutil.Process(browser_process.pid)
             children = parent.children(recursive=True)
@@ -77,31 +77,48 @@ def kill_browser():
             for p in alive:
                 p.kill()
         except psutil.NoSuchProcess:
-            logging.info(f"Proces {browser_process.pid} już nie istnieje.")
+            logging.info(f"Process {browser_process.pid} already gone.")
         except Exception as e:
-            logging.error(f"Błąd podczas kończenia procesu: {e}")
+            logging.error(f"Error during process termination: {e}")
     
     browser_process = None
-    logging.info("Proces przeglądarki zakończony.")
+    logging.info("Browser process terminated.")
 
 def close_popup():
-    """Symuluje naciśnięcie ESC, aby zamknąć irytujące popupy, takie jak logowanie PowerBI."""
+    """Standard popup closer: Presses ESC twice quickly."""
     try:
-        logging.info("Wysyłanie ESC, aby zamknąć potencjalne popupy...")
+        logging.info("Sending Standard ESC sequence...")
         subprocess.run(
             ['xdotool', 'search', '--onlyvisible', '--class', 'chromium', 'windowactivate', '--sync', 'key', 'Escape', 'sleep', '0.5', 'key', 'Escape'],
             check=False
         )
     except Exception as e:
-        logging.error(f"Błąd podczas wysyłania ESC: {e}")
+        logging.error(f"Error sending ESC: {e}")
+
+def handle_dynamics_popup():
+    """Special handler for Dynamics CRM popups which are slow and persistent."""
+    try:
+        logging.info("Dynamics URL detected. Running aggressive popup killer...")
+        # Dynamics is slow. We wait a bit, then hammer ESC multiple times over a few seconds.
+        # Wait 5s for the white screen/spinner to finish
+        time.sleep(5)
+        
+        # Press ESC 3 times with 2 second intervals. This catches the popup whenever it decides to show up.
+        for i in range(3):
+            logging.info(f"Dynamics ESC attempt {i+1}/3")
+            subprocess.run(['xdotool', 'key', 'Escape'], check=False)
+            time.sleep(2)
+            
+    except Exception as e:
+        logging.error(f"Error handling Dynamics popup: {e}")
 
 def launch_browser(urls):
-    """Uruchamia Chromium z podanymi adresami URL."""
+    """Launches Chromium with the specified URLs."""
     global browser_process, url_refresh_times, tabs_initialized
     kill_browser()
 
     if not urls:
-        logging.error("Nie podano adresów URL do uruchomienia.")
+        logging.error("No URLs provided to launch.")
         return
 
     user_data_dir = os.path.expanduser("~/.config/chromium")
@@ -120,29 +137,27 @@ def launch_browser(urls):
         f'--user-data-dir={user_data_dir}' 
     ] + urls
 
-    logging.info(f"Uruchamianie nowej sesji przeglądarki z {len(urls)} kartami.")
+    logging.info(f"Launching new browser session with {len(urls)} tabs.")
     try:
         browser_process = subprocess.Popen(
             command, 
             env=os.environ.copy(),
             preexec_fn=os.setsid
         )
-        logging.info(f"Przeglądarka uruchomiona z PID: {browser_process.pid}")
+        logging.info(f"Browser launched with PID: {browser_process.pid}")
         
-        time.sleep(15) 
+        time.sleep(20) 
         
-        # Resetowanie stanu
+        # Reset state
         url_refresh_times = {}
-        tabs_initialized = set() # Resetowanie śledzenia inicjalizacji
-        
-        # Obsługa pierwszego popupu w logice pętli głównej
+        tabs_initialized = set() 
         
     except Exception as e:
-        logging.error(f"Nie udało się uruchomić przeglądarki: {e}")
+        logging.error(f"Failed to launch browser: {e}")
         browser_process = None
 
 def focus_tab(tab_index):
-    """Aktywuje określoną kartę."""
+    """Focuses a specific tab."""
     try:
         if tab_index <= 8:
             key = f"ctrl+{tab_index}"
@@ -150,37 +165,37 @@ def focus_tab(tab_index):
             return
         subprocess.run(['xdotool', 'key', key], check=False)
     except Exception as e:
-        logging.error(f"Błąd podczas aktywowania karty {tab_index}: {e}")
+        logging.error(f"Error focusing tab {tab_index}: {e}")
 
 def cycle_next_tab():
-    """Przełącza na następną kartę."""
+    """Cycles to the next tab."""
     try:
         subprocess.run(['xdotool', 'key', 'ctrl+Tab'], check=False)
     except Exception as e:
-        logging.error(f"Błąd podczas przełączania karty: {e}")
+        logging.error(f"Error cycling tab: {e}")
 
 def refresh_page():
-    """Odświeża bieżącą stronę."""
+    """Refreshes the current page."""
     try:
         subprocess.run(['xdotool', 'key', 'ctrl+r'], check=False)
-        logging.info("Strona odświeżona.")
+        logging.info("Page refreshed.")
     except Exception as e:
-        logging.error(f"Błąd podczas odświeżania strony: {e}")
+        logging.error(f"Error refreshing page: {e}")
 
-# --- Główna pętla kiosku ---
+# --- Main Kiosk Loop ---
 def main():
     global current_mode, current_url_index, url_refresh_times, tabs_initialized
 
-    logging.info("--- Skrypt sterujący kioskiem uruchomiony ---")
+    logging.info("--- Kiosk Control Script Started ---")
     time.sleep(5)
     
-    # Interwał odświeżania: 1 godzina (3600 sekund)
+    # Refresh interval: 1 hour (3600 seconds)
     REFRESH_INTERVAL = 3600 
 
     while True:
         config = load_config()
         if not config:
-            logging.error("Ponawianie próby wczytania konfiguracji za 60s...")
+            logging.error("Retrying config load in 60s...")
             time.sleep(60)
             continue
         
@@ -190,21 +205,21 @@ def main():
         on = is_on_hours(config.get('on_hours_start'), config.get('on_hours_end'))
         
         if on:
-            # --- GODZINY WŁĄCZENIA ---
+            # --- ON HOURS ---
             if current_mode != 'ON' or browser_process is None or browser_process.poll() is not None:
-                logging.info("Wchodzenie w tryb 'Godziny włączenia'.")
+                logging.info("Entering 'On Hours' mode.")
                 current_mode = 'ON'
                 current_url_index = 0
                 
                 urls_to_launch = [entry['url'] for entry in on_urls if entry.get('url')]
                 if not urls_to_launch:
-                    logging.warning("Tryb 'Godziny włączenia' aktywny, ale nie skonfigurowano adresów URL.")
+                    logging.warning("'On Hours' mode active, but no URLs configured.")
                     time.sleep(60)
                     continue
                 
                 launch_browser(urls_to_launch)
             
-            # --- Przełączanie kart i odświeżanie ---
+            # --- Tab Switching & Refreshing ---
             if on_urls and len(on_urls) > 0:
                 if current_url_index >= len(on_urls):
                     current_url_index = 0
@@ -213,36 +228,46 @@ def main():
                 current_url = current_entry.get('url')
                 duration = current_entry.get('duration', 60)
                 
-                logging.info(f"Wyświetlanie karty {current_url_index + 1} ({current_entry.get('notes', 'Brak notatek')}) przez {duration}s")
+                logging.info(f"Displaying tab {current_url_index + 1} ({current_entry.get('notes', 'No notes')}) for {duration}s")
 
-                # Zawsze wykonuj close_popup po przełączeniu na kartę
-                # Daje to pewność, że jeśli popup pojawił się w tle, zostanie zamknięty teraz
-                time.sleep(2) # Poczekaj chwilę po przełączeniu, aby karta stała się aktywna
-                close_popup()
-
-                # Sprawdź logikę odświeżania (uruchom przy starcie LUB co godzinę)
+                # Ensure correct tab focus
+                if len(on_urls) > 1 and browser_process is not None:
+                     if current_url_index < 8:
+                         focus_tab(current_url_index + 1)
+                
+                # Check refresh logic
                 current_time = time.time()
                 last_refreshed = url_refresh_times.get(current_url, 0)
                 needs_refresh = (current_time - last_refreshed > REFRESH_INTERVAL)
-                
+                is_first_visit = current_url_index not in tabs_initialized
+
+                # 1. Refresh Phase
                 if needs_refresh:
-                    logging.info(f"Odświeżanie karty {current_url_index + 1}...")
-                    
-                    # Odśwież, aby pobrać najnowsze dane
+                    logging.info(f"Refreshing tab {current_url_index + 1}...")
                     refresh_page()
                     url_refresh_times[current_url] = current_time
-                    
-                    # Po odświeżeniu również spróbuj zamknąć popup
-                    time.sleep(5) 
-                    close_popup()
+                    time.sleep(10) # Base wait for reload
                 else:
-                    logging.info(f"Pominięcie odświeżania (Odświeżono {int(current_time - last_refreshed)}s temu)")
+                    time.sleep(2) # Minimal wait for render
+
+                # 2. Popup Handling Phase
+                # Determine if this is a Dynamics URL
+                is_dynamics = "dynamics.com" in current_url
                 
-                # 2. Czekaj przez określony czas
-                # (Odejmujemy czas poświęcony na obsługę popupów, aby zachować płynność, ale tutaj po prostu czekamy)
+                # We always run popup logic on first visit or refresh
+                # For Dynamics, we run it EVERY time because it's persistent
+                if needs_refresh or is_first_visit or is_dynamics:
+                    if is_dynamics:
+                        handle_dynamics_popup()
+                    else:
+                        close_popup()
+                    
+                    tabs_initialized.add(current_url_index)
+
+                # 3. Wait Phase
                 time.sleep(duration) 
                 
-                # 3. Przełącz kartę (jeśli jest więcej niż jedna)
+                # 4. Next Tab Phase
                 if len(on_urls) > 1:
                     cycle_next_tab()
                 
@@ -251,12 +276,12 @@ def main():
                 time.sleep(60)
 
         else:
-            # --- GODZINY WYŁĄCZENIA ---
+            # --- OFF HOURS ---
             if current_mode != 'OFF' or browser_process is None or browser_process.poll() is not None:
-                logging.info("Wchodzenie w tryb 'Godziny wyłączenia'.")
+                logging.info("Entering 'Off Hours' mode.")
                 current_mode = 'OFF'
                 if not off_url:
-                    logging.warning("Nie skonfigurowano adresu URL dla godzin wyłączenia.")
+                    logging.warning("No off-hours URL configured.")
                     kill_browser()
                 else:
                     launch_browser([off_url])
@@ -267,8 +292,8 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        logging.info("Skrypt zatrzymany przez użytkownika.")
+        logging.info("Script stopped by user.")
         kill_browser()
     except Exception as e:
-        logging.error(f"--- NIEODŁUŻONY WYJĄTEK: {e} ---")
+        logging.error(f"--- UNHANDLED EXCEPTION: {e} ---")
         kill_browser()
